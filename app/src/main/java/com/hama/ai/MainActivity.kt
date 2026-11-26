@@ -1,81 +1,116 @@
-
-
 package com.hama.ai
 
 import android.app.Activity
 import android.os.Bundle
 import android.graphics.Color
+import android.graphics.Typeface
 import android.view.Gravity
+import android.view.View
 import android.widget.*
 
 class MainActivity : Activity() {
 
     private lateinit var messages: LinearLayout
     private lateinit var scroll: ScrollView
+    private val navy = Color.rgb(12, 18, 34)
+    private val panel = Color.rgb(24, 33, 54)
+    private val accent = Color.rgb(91, 124, 250)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = navy
+        window.navigationBarColor = navy
 
-        val root = LinearLayout(this)
-        root.orientation = LinearLayout.VERTICAL
-        root.setPadding(20, 30, 20, 15)
-        root.setBackgroundColor(Color.rgb(15, 20, 38))
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(18, 22, 18, 14)
+            setBackgroundColor(navy)
+        }
 
-        val title = TextView(this)
-        title.text = "HAMA AI"
-        title.textSize = 28f
-        title.setTextColor(Color.WHITE)
-        title.gravity = Gravity.CENTER
-        root.addView(title)
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(8, 12, 8, 20)
+        }
 
-        val subtitle = TextView(this)
-        subtitle.text = "Your Smart AI Assistant"
-        subtitle.textSize = 14f
-        subtitle.setTextColor(Color.LTGRAY)
-        subtitle.gravity = Gravity.CENTER
-        root.addView(subtitle)
+        val title = TextView(this).apply {
+            text = "HAMA AI"
+            textSize = 30f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+        }
+        header.addView(title)
+
+        val subtitle = TextView(this).apply {
+            text = "ستاسو هوښیار مرستیال"
+            textSize = 14f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+            setPadding(0, 4, 0, 0)
+        }
+        header.addView(subtitle)
+        root.addView(header)
+
+        val status = TextView(this).apply {
+            text = "●  چمتو دی"
+            textSize = 12f
+            setTextColor(Color.rgb(112, 220, 160))
+            setPadding(4, 0, 0, 10)
+        }
+        root.addView(status)
 
         scroll = ScrollView(this)
-        messages = LinearLayout(this)
-        messages.orientation = LinearLayout.VERTICAL
-        messages.setPadding(0, 25, 0, 15)
-
+        messages = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 8, 0, 16)
+        }
         scroll.addView(messages)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        root.addView(
-            scroll,
-            LinearLayout.LayoutParams(
-                -1, 0, 1f
-            )
-        )
+        addMessage("سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟", false)
 
-        addMessage("سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟")
+        val hint = TextView(this).apply {
+            text = "یوه پوښتنه ولیکئ"
+            textSize = 12f
+            setTextColor(Color.LTGRAY)
+            setPadding(2, 8, 2, 6)
+        }
+        root.addView(hint)
 
-        val input = EditText(this)
-        input.hint = "خپل پیغام ولیکئ..."
-        input.setTextColor(Color.WHITE)
-        input.setHintTextColor(Color.LTGRAY)
-        input.setSingleLine(true)
-        input.setPadding(15, 10, 15, 10)
+        val bottom = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(8, 5, 5, 5)
+            setBackgroundColor(panel)
+        }
 
-        val send = Button(this)
-        send.text = "Send"
+        val input = EditText(this).apply {
+            hint = "پیغام ولیکئ..."
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.LTGRAY)
+            textSize = 16f
+            setSingleLine(true)
+            background = null
+            setPadding(8, 10, 8, 10)
+        }
+        bottom.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
 
-        val bottom = LinearLayout(this)
-        bottom.orientation = LinearLayout.HORIZONTAL
-
-        bottom.addView(input,
-            LinearLayout.LayoutParams(0, -2, 1f))
+        val send = Button(this).apply {
+            text = "ولېږه"
+            textSize = 13f
+            setTextColor(Color.WHITE)
+            isAllCaps = false
+            setBackgroundColor(accent)
+        }
         bottom.addView(send)
-
         root.addView(bottom)
 
         send.setOnClickListener {
             val text = input.text.toString().trim()
-
             if (text.isNotEmpty()) {
-                addMessage("You: $text")
-                addMessage("HAMA AI: ستا پیغام ترلاسه شو!")
+                addMessage(text, true)
+                addMessage("ستا پیغام ترلاسه شو. د ریښتیني AI ځواب لپاره به په بل پړاو کې د AI خدمت وصل کړو.", false)
                 input.text.clear()
             }
         }
@@ -83,16 +118,23 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
-    private fun addMessage(text: String) {
-        val message = TextView(this)
-        message.text = text
-        message.textSize = 17f
-        message.setTextColor(Color.WHITE)
-        message.setPadding(15, 15, 15, 15)
-
-        messages.addView(message)
-        scroll.post {
-            scroll.fullScroll(ScrollView.FOCUS_DOWN)
+    private fun addMessage(text: String, fromUser: Boolean) {
+        val bubble = TextView(this).apply {
+            this.text = text
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            setPadding(16, 12, 16, 12)
+            setBackgroundColor(if (fromUser) accent else panel)
         }
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = if (fromUser) Gravity.END else Gravity.START
+            setPadding(0, 5, 0, 5)
+            addView(bubble, LinearLayout.LayoutParams(
+                (resources.displayMetrics.widthPixels * 0.78f).toInt(), -2
+            ))
+        }
+        messages.addView(row)
+        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
     }
 }
