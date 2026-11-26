@@ -86,7 +86,7 @@ class MainActivity : Activity() {
         }
 
         val input = EditText(this).apply {
-            hint = "پیغام ولیکئ..."
+            setHint("پیغام ولیکئ...")
             setTextColor(Color.WHITE)
             setHintTextColor(Color.LTGRAY)
             textSize = 16f
