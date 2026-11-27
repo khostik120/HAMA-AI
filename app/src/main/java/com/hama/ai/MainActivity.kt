@@ -78,11 +78,21 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             cornerRadius = radius * resources.displayMetrics.density
         }
 
+    private fun glossy(colors: IntArray, radius: Float = 22f, strokeColor: Int = Color.TRANSPARENT): android.graphics.drawable.GradientDrawable =
+        android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR, colors
+        ).apply {
+            cornerRadius = radius * resources.displayMetrics.density
+            if (strokeColor != Color.TRANSPARENT) {
+                setStroke((1.2f * resources.displayMetrics.density).toInt(), strokeColor)
+            }
+        }
+
     private fun baseScreen(titleText: String, subtitleText: String? = null) {
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(14, 8, 14, 8)
-            setBackgroundColor(navy)
+            background = glossy(intArrayOf(Color.rgb(3, 7, 20), Color.rgb(8, 19, 43), Color.rgb(2, 8, 24)), 0f)
         }
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -348,10 +358,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun showChat() {
         baseScreen("HAMA AI", "ستاسو څو ژبی هوښیار مرستیال")
         root.addView(TextView(this).apply {
-            text = "● آنلاین څو ژبی AI"
+            text = "✦  HAMA AI  •  آنلاین څو ژبی AI"
             textSize = 12f
-            setTextColor(Color.rgb(112, 220, 160))
-            setPadding(8, 5, 8, 8)
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(80, 226, 255))
+            setPadding(10, 7, 10, 10)
+            background = rounded(Color.rgb(10, 30, 58), 18f)
         })
         languagePicker = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, languages).also {
@@ -385,7 +397,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(7, 3, 4, 3)
-            background = rounded(panel, 26f)
+            background = glossy(intArrayOf(Color.rgb(19, 30, 57), Color.rgb(8, 15, 32)), 26f, Color.rgb(42, 111, 190))
+            elevation = 18f * resources.displayMetrics.density
         }
         input = EditText(this).apply {
             hint = "پیغام ولیکئ..."
@@ -459,13 +472,17 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             textSize = 16f
             setTextColor(Color.WHITE)
             setPadding(15, 11, 15, 11)
-            background = rounded(if (fromUser) accent else panel, 18f)
+            background = if (fromUser)
+                glossy(intArrayOf(Color.rgb(0, 224, 255), Color.rgb(0, 112, 226), Color.rgb(30, 62, 180)), 20f, Color.rgb(113, 237, 255))
+            else
+                glossy(intArrayOf(Color.rgb(28, 55, 99), Color.rgb(12, 25, 52), Color.rgb(7, 15, 34)), 20f, Color.rgb(55, 139, 221))
+            elevation = 9f * resources.displayMetrics.density
         }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = if (fromUser) Gravity.END else Gravity.START
-            setPadding(0, 5, 0, 5)
-            addView(bubble, LinearLayout.LayoutParams((resources.displayMetrics.widthPixels * 0.78f).toInt(), -2))
+            setPadding(2, 7, 2, 7)
+            addView(bubble, LinearLayout.LayoutParams((resources.displayMetrics.widthPixels * 0.80f).toInt(), -2))
         }
         messages.addView(row)
         bubble.setOnLongClickListener {
