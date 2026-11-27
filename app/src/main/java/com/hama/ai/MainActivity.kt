@@ -617,6 +617,14 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             prefs.edit().putBoolean("speak_replies", speakReplies).apply()
             showSettings()
         })
+        root.addView(smallButton("💾 د معلوماتو بیک اپ صادرول") { createBackup() })
+        root.addView(smallButton("📂 د بیک اپ واردول") {
+            val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+            }
+            startActivityForResult(pick, 605)
+        })
         root.addView(smallButton("د ځواب غږ ازموینه") {
             if (speechReady) speech.speak("سلام! زه HAMA AI یم.", TextToSpeech.QUEUE_FLUSH, null, "hama-test")
             else Toast.makeText(this, "غږیز سیستم چمتو نه دی.", Toast.LENGTH_SHORT).show()
@@ -634,6 +642,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(0, 20, 0, 10)
         })
         root.addView(bottomNav("settings"))
+    }
+
+    private fun createBackup() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "hama-ai-backup.json")
+        }
+        startActivityForResult(intent, 604)
     }
 
     private fun loadChats(): JSONArray = try { JSONArray(prefs.getString("chats", "[]")) } catch (_: Exception) { JSONArray() }
@@ -659,6 +676,62 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 604 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                val backup = JSONObject()
+                    .put("format", "hama-ai-backup")
+                    .put("version", 1)
+                    .put("exportedAt", System.currentTimeMillis())
+                    .put("chats", loadChats())
+                    .put("projects", projectItems)
+                contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
+                    it.write(backup.toString(2))
+                } ?: throw IllegalStateException("فایل ته لیکل ممکن نه شول")
+                Toast.makeText(this, "بیک اپ صادر شو.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "بیک اپ صادر نه شو.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        if (requestCode == 605 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                val raw = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                    ?: throw IllegalStateException("فایل نه لوستل کېږي")
+                if (raw.length > 2_000_000) throw IllegalArgumentException("بیک اپ ډېر لوی دی.")
+                val backup = JSONObject(raw)
+                if (backup.optString("format") != "hama-ai-backup") throw IllegalArgumentException("دا د HAMA AI بیک اپ نه دی.")
+                val incomingChats = backup.optJSONArray("chats") ?: JSONArray()
+                val mergedChats = loadChats()
+                val knownIds = HashSet<String>()
+                for (i in 0 until mergedChats.length()) knownIds.add(mergedChats.optJSONObject(i)?.optString("id") ?: "")
+                var added = 0
+                for (i in 0 until incomingChats.length()) {
+                    val item = incomingChats.optJSONObject(i) ?: continue
+                    val chatId = item.optString("id")
+                    if (chatId.isNotBlank() && knownIds.add(chatId)) {
+                        mergedChats.put(item)
+                        added++
+                    }
+                }
+                prefs.edit().putString("chats", mergedChats.toString()).apply()
+                val incomingProjects = backup.optJSONArray("projects") ?: JSONArray()
+                val mergedProjects = projectItems
+                val projectNames = HashSet<String>()
+                for (i in 0 until mergedProjects.length()) projectNames.add(mergedProjects.optJSONObject(i)?.optString("name") ?: "")
+                for (i in 0 until incomingProjects.length()) {
+                    val item = incomingProjects.optJSONObject(i) ?: continue
+                    val name = item.optString("name")
+                    if (name.isNotBlank() && projectNames.add(name)) mergedProjects.put(item)
+                }
+                prefs.edit().putString("project_items", mergedProjects.toString()).apply()
+                Toast.makeText(this, "$added نوې خبرې بېرته وارد شوې.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "بیک اپ وارد نه شو.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if (requestCode == 603 && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
             try {
