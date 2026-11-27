@@ -1,71 +1,58 @@
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+  });
+}
+
 export default {
   async fetch(request, env) {
-    const cors = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Content-Type": "application/json; charset=utf-8"
-    };
-
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: cors });
+      return new Response(null, { status: 204, headers: corsHeaders });
     }
-    if (request.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Use POST /chat" }), {
-        status: 405, headers: cors
-      });
-    }
+
+    const url = new URL(request.url);
+    if (url.pathname !== "/chat") return json({ error: "HAMA AI server is running. Use POST /chat." }, 404);
+    if (request.method !== "POST") return json({ error: "Only POST is supported." }, 405);
+    if (!env.AI) return json({ error: "Workers AI binding is missing. Add a binding named AI." }, 500);
 
     try {
       const body = await request.json();
-      const message = String(body.message || "").trim();
-      if (!message) {
-        return new Response(JSON.stringify({ error: "پیغام تش دی." }), {
-          status: 400, headers: cors
-        });
-      }
-      if (!env.OPENAI_API_KEY) {
-        return new Response(JSON.stringify({ error: "د سرور OpenAI API key نه دی تنظیم شوی." }), {
-          status: 500, headers: cors
-        });
-      }
+      const message = typeof body.message === "string" ? body.message.trim() : "";
+      const language = typeof body.language === "string" ? body.language.trim() : "Auto-detect";
 
-      const ai = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-5.5",
-          instructions: "You are HAMA AI, a helpful assistant. Reply naturally in Pashto when the user writes Pashto, otherwise use the user's language. Be clear, accurate, and beginner-friendly.",
-          input: message,
-          max_output_tokens: 700
-        })
+      if (!message) return json({ error: "Please enter a message." }, 400);
+      if (message.length > 8000) return json({ error: "Message is too long." }, 413);
+
+      const systemPrompt = [
+        "You are HAMA AI, a helpful, accurate, friendly multilingual AI assistant.",
+        "You can understand and answer in many languages.",
+        language && language !== "Auto-detect"
+          ? "The user selected this reply language: " + language + ". Reply in that language."
+          : "Detect the language of the latest user message and reply in the same language.",
+        "Do not claim to be ChatGPT or OpenAI. Your name is HAMA AI.",
+        "Be clear and honest. If you do not know something, say so."
+      ].join(" ");
+
+      const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        max_completion_tokens: 1200
       });
 
-      const data = await ai.json();
-      if (!ai.ok) {
-        return new Response(JSON.stringify({
-          error: data.error?.message || "OpenAI API error"
-        }), { status: ai.status, headers: cors });
-      }
-
-      const reply = (data.output || [])
-        .filter(item => item.type === "message")
-        .flatMap(item => item.content || [])
-        .filter(item => item.type === "output_text")
-        .map(item => item.text || "")
-        .join("\n")
-        .trim();
-
-      return new Response(JSON.stringify({
-        reply: reply || "بښنه غواړم، دا ځل ځواب ترلاسه نه شو."
-      }), { headers: cors });
+      const reply = result?.response ?? result?.choices?.[0]?.message?.content ?? result?.output_text ?? "";
+      if (!reply) return json({ error: "The AI returned an empty response. Please try again." }, 502);
+      return json({ reply: String(reply), model: "@cf/zai-org/glm-4.7-flash" });
     } catch (error) {
-      return new Response(JSON.stringify({ error: "د غوښتنې په پروسس کې ستونزه رامنځته شوه." }), {
-        status: 500, headers: cors
-      });
+      return json({ error: error?.message || "The AI service could not complete the request." }, 500);
     }
   }
 };
