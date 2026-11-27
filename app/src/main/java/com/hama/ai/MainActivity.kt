@@ -39,6 +39,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var languagePicker: Spinner
     private lateinit var speech: TextToSpeech
     private var speechReady = false
+    private var speakReplies = prefs.getBoolean("speak_replies", false)
     private var recognizer: SpeechRecognizer? = null
     private var selectedLanguage = "Auto-detect"
     private var currentChatId = System.currentTimeMillis().toString()
@@ -195,7 +196,16 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 connection.readTimeout = 90000
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                val body = JSONObject().put("message", message).put("language", selectedLanguage)
+                val context = JSONArray()
+                chatMessages.takeLast(12).forEach { item ->
+                    context.put(JSONObject()
+                        .put("role", if (item.optBoolean("user")) "user" else "assistant")
+                        .put("content", item.optString("text").take(4000)))
+                }
+                val body = JSONObject()
+                    .put("message", message)
+                    .put("language", selectedLanguage)
+                    .put("messages", context)
                 connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
@@ -211,6 +221,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 waitingRow?.let { messages.removeView(it) }
                 waitingRow = null
                 addMessage(answer, false, true)
+                if (speakReplies && speechReady) speech.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "hama-reply")
                 sendButton.isEnabled = true
                 sendButton.text = "ولېږه"
             }
@@ -365,6 +376,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             }
         }
         root.addView(picker)
+        root.addView(smallButton(if (speakReplies) "د ځوابونو اتومات غږ: فعال" else "د ځوابونو اتومات غږ: بند") {
+            speakReplies = !speakReplies
+            prefs.edit().putBoolean("speak_replies", speakReplies).apply()
+            showSettings()
+        })
         root.addView(smallButton("د ځواب غږ ازموینه") {
             if (speechReady) speech.speak("سلام! زه HAMA AI یم.", TextToSpeech.QUEUE_FLUSH, null, "hama-test")
             else Toast.makeText(this, "غږیز سیستم چمتو نه دی.", Toast.LENGTH_SHORT).show()
