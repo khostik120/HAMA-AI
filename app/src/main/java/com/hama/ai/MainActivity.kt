@@ -61,7 +61,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         selectedLanguage = prefs.getString("selected_language", "Auto-detect") ?: "Auto-detect"
         window.statusBarColor = navy
         window.navigationBarColor = navy
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        // Resize the chat window above the Android keyboard instead of
+        // allowing the IME to cover the composer and its action buttons.
+        window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+        )
         speech = TextToSpeech(this, this)
         showChat()
     }
@@ -445,6 +450,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
             }
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    root.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                }
+            }
         }
         inputPanel.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
         composer.addView(inputPanel, LinearLayout.LayoutParams(-1, -2))
@@ -517,10 +527,18 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val visibleFrame = android.graphics.Rect()
             root.getWindowVisibleDisplayFrame(visibleFrame)
             val fullHeight = root.rootView.height
+            val visibleHeight = visibleFrame.height()
+            val keyboardHeight = fullHeight - visibleHeight
             val keyboardVisible = fullHeight > 0 &&
-                (fullHeight - visibleFrame.bottom) > (fullHeight * 0.18f)
+                keyboardHeight > (fullHeight * 0.18f)
+
+            // Give the chat messages and composer the space reclaimed from
+            // the app navigation row while the Android keyboard is visible.
             chatNav.visibility = if (keyboardVisible) View.GONE else View.VISIBLE
-            if (keyboardVisible) scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            if (keyboardVisible) {
+                composer.requestLayout()
+                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            }
         }
     }
 
