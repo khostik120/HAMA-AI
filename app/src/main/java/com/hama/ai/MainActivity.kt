@@ -518,9 +518,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             elevation = 20f * resources.displayMetrics.density
         }
         val inputPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+            // Keep the message field and every chat action inside one
+            // outlined composer surface, with actions directly below text.
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(9, 3, 9, 3)
+            setPadding(9, 5, 9, 7)
             background = glossy(intArrayOf(Color.rgb(27, 47, 83), Color.rgb(12, 23, 47)), 19f, Color.rgb(65, 157, 239))
         }
         input = EditText(this).apply {
@@ -545,7 +547,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 }
             }
         }
-        inputPanel.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        inputPanel.addView(input, LinearLayout.LayoutParams(-1, -2))
         composer.addView(inputPanel, LinearLayout.LayoutParams(-1, -2))
 
         val actions = LinearLayout(this).apply {
@@ -602,7 +604,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setOnClickListener { sendMessage() }
         }
         actions.addView(sendButton, LinearLayout.LayoutParams(54, 46))
-        composer.addView(actions, LinearLayout.LayoutParams(-1, -2))
+        // The action row is part of the same bordered text-entry panel.
+        inputPanel.addView(actions, LinearLayout.LayoutParams(-1, -2))
         root.addView(composer, LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = (7 * resources.displayMetrics.density).toInt()
             bottomMargin = (4 * resources.displayMetrics.density).toInt()
