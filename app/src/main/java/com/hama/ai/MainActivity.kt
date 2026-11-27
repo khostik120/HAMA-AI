@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
@@ -15,6 +17,7 @@ import android.speech.tts.TextToSpeech
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -251,6 +254,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             background = null
             setPadding(8, 12, 8, 12)
             maxLines = 4
+            imeOptions = EditorInfo.IME_ACTION_SEND
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
+            }
         }
         composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
         val mic = TextView(this).apply {
@@ -305,6 +312,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             addView(bubble, LinearLayout.LayoutParams((resources.displayMetrics.widthPixels * 0.78f).toInt(), -2))
         }
         messages.addView(row)
+        bubble.setOnLongClickListener {
+            val actions = if (fromUser) arrayOf("کاپي کول", "شریکول") else arrayOf("کاپي کول", "شریکول", "په غږ لوستل")
+            AlertDialog.Builder(this@MainActivity)
+                .setItems(actions) { _, which ->
+                    when (actions[which]) {
+                        "کاپي کول" -> {
+                            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("HAMA AI", text))
+                            Toast.makeText(this@MainActivity, "کاپي شو", Toast.LENGTH_SHORT).show()
+                        }
+                        "شریکول" -> {
+                            val share = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, text)
+                            }
+                            startActivity(Intent.createChooser(share, "شریکول"))
+                        }
+                        "په غږ لوستل" -> if (speechReady) speech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "hama-message")
+                    }
+                }.show()
+            true
+        }
         if (save) {
             chatMessages.add(JSONObject().put("text", text).put("user", fromUser))
             saveCurrentChat()
