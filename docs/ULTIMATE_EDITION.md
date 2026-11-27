@@ -14,6 +14,7 @@ HAMA AI is an Android AI assistant with a clean, accessible chat interface, loca
 - Local Library index using Android Storage Access Framework (add, open, remove document references).
 - Attach supported text, JSON, XML, and source-code files to a chat prompt (up to 60,000 characters); file content is sent to the configured online Worker.
 - Export and import a JSON backup of conversation history and project names; imports merge without replacing matching chat IDs or project names.
+- Cancel an in-progress online AI request from the send button.
 - Profile name stored on device.
 - Settings for response language, automatic spoken replies, and clearing chat history.
 - Online chat backend configured through the Cloudflare Worker endpoint in MainActivity.
@@ -36,6 +37,7 @@ HAMA AI is an Android AI assistant with a clean, accessible chat interface, loca
 | On-device/offline LLM | Not implemented | Requires selecting, packaging/downloading, and benchmarking a compatible model |
 | Streaming responses | Not implemented | Current client reads a complete JSON response |
 | Chat/project backup | Implemented | JSON export/import; imports merge by chat ID and project name |
+| Cancel AI request | Implemented | Disconnects the active HTTP request; cancellation behavior still needs device testing |
 | Encrypted local storage | Not implemented | Requires key management and migration plan |
 
 ## Engineering requirements
@@ -61,6 +63,7 @@ A source ZIP size is not a quality metric. Do not add filler code or duplicated 
 - [ ] Verify document add/open/remove flows.
 - [ ] Verify supported text/code attachment, empty file, oversized file, and unsupported MIME type.
 - [ ] Verify JSON backup export/import and duplicate merge behavior.
+- [ ] Verify cancelling before connection, during upload, and while waiting for the server response.
 - [ ] Verify speech permission denied/granted flows.
 - [ ] Verify accessibility, RTL, small screens, and keyboard behavior.
 - [ ] Verify no secrets are committed.
