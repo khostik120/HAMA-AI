@@ -61,32 +61,113 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         if (speechReady) speech.language = Locale.getDefault()
     }
 
+    private fun rounded(color: Int, radius: Float = 22f): android.graphics.drawable.GradientDrawable =
+        android.graphics.drawable.GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = radius * resources.displayMetrics.density
+        }
+
     private fun baseScreen(titleText: String, subtitleText: String? = null) {
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(16, 10, 16, 8)
+            setPadding(14, 8, 14, 8)
             setBackgroundColor(navy)
         }
         val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 5, 0, 12)
+        }
+        val menu = TextView(this).apply {
+            text = "☰"
+            textSize = 23f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = rounded(panel, 28f)
+            setPadding(15, 10, 15, 10)
+            setOnClickListener { showDrawer() }
+        }
+        header.addView(menu)
+        val heading = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(4, 8, 4, 12)
+            setPadding(8, 0, 8, 0)
         }
-        header.addView(TextView(this).apply {
+        heading.addView(TextView(this).apply {
             text = titleText
-            textSize = 27f
+            textSize = 21f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
         })
-        if (subtitleText != null) header.addView(TextView(this).apply {
+        if (subtitleText != null) heading.addView(TextView(this).apply {
             text = subtitleText
-            textSize = 13f
+            textSize = 11f
             setTextColor(muted)
             gravity = Gravity.CENTER
         })
+        header.addView(heading, LinearLayout.LayoutParams(0, -2, 1f))
+        val newChat = TextView(this).apply {
+            text = "＋"
+            textSize = 25f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = rounded(panel, 28f)
+            setPadding(12, 7, 12, 7)
+            setOnClickListener { newChat() }
+        }
+        header.addView(newChat)
         root.addView(header)
         setContentView(root)
+    }
+
+    private fun showDrawer() {
+        val entries = arrayOf("＋  نوی چټ", "▤  تاریخچه", "▦  Library", "▣  Projects", "⚙  تنظیمات", "◉  پروفایل")
+        AlertDialog.Builder(this, android.app.AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+            .setTitle("HAMA AI")
+            .setItems(entries) { _, which ->
+                when (which) {
+                    0 -> newChat()
+                    1 -> showHistory()
+                    2 -> showLibrary()
+                    3 -> showProjects()
+                    4 -> showSettings()
+                    5 -> showProfile()
+                }
+            }
+            .setNegativeButton("بندول", null)
+            .show()
+    }
+
+    private fun showLibrary() {
+        baseScreen("Library", "ستاسو خوندي شوي توکي")
+        root.addView(TextView(this).apply {
+            text = "ستاسو فایلونه او خوندي شوي توکي به دلته ښکاره شي."
+            textSize = 15f
+            setTextColor(muted)
+            setPadding(12, 24, 12, 24)
+        })
+        root.addView(bottomNav("library"))
+    }
+
+    private fun showProjects() {
+        baseScreen("Projects", "خپل کارونه منظم کړئ")
+        root.addView(TextView(this).apply {
+            text = "تر اوسه کومه پروژه نه ده جوړه شوې."
+            textSize = 15f
+            setTextColor(muted)
+            setPadding(12, 24, 12, 24)
+        })
+        root.addView(smallButton("＋ نوې پروژه") {
+            val field = EditText(this).apply { hint = "د پروژې نوم" }
+            AlertDialog.Builder(this).setTitle("نوې پروژه").setView(field)
+                .setNegativeButton("لغوه", null)
+                .setPositiveButton("جوړول") { _, _ ->
+                    val name = field.text.toString().trim()
+                    if (name.isNotEmpty()) Toast.makeText(this, "پروژه: $name", Toast.LENGTH_SHORT).show()
+                }.show()
+        })
+        root.addView(bottomNav("projects"))
     }
 
     private fun showChat() {
@@ -95,7 +176,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             text = "● آنلاین څو ژبی AI"
             textSize = 12f
             setTextColor(Color.rgb(112, 220, 160))
-            setPadding(2, 0, 0, 6)
+            setPadding(8, 5, 8, 8)
         })
         languagePicker = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, languages).also {
@@ -136,7 +217,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setHintTextColor(muted)
             textSize = 16f
             background = null
-            setPadding(8, 8, 8, 8)
+            setPadding(8, 12, 8, 12)
             maxLines = 4
         }
         composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
@@ -153,8 +234,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         textSize = 12f
         isAllCaps = false
         setTextColor(Color.WHITE)
-        setBackgroundColor(accent)
-        setPadding(5, 0, 5, 0)
+        background = rounded(accent, 18f)
+        setPadding(9, 0, 9, 0)
         setOnClickListener { action() }
     }
 
