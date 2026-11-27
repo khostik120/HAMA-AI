@@ -13,17 +13,28 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class MainActivity : Activity() {
-
     private lateinit var messages: LinearLayout
     private lateinit var scroll: ScrollView
     private lateinit var input: EditText
     private lateinit var send: Button
+    private lateinit var languagePicker: Spinner
+
     private val navy = Color.rgb(12, 18, 34)
     private val panel = Color.rgb(24, 33, 54)
     private val accent = Color.rgb(91, 124, 250)
 
-    // Replace this URL after deploying the Cloudflare Worker.
-    private val apiUrl = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev/chat"
+    // This endpoint contains no secret key. The AI runs through the Cloudflare Worker.
+    private val apiUrl = "https://cool-brook-c584.khosthroe892.workers.dev/chat"
+
+    private val languages = listOf(
+        "Auto-detect", "پښتو", "دري", "انګلیسي", "عربي", "اردو", "فارسي",
+        "هندي", "بنګالي", "چینایي", "جاپاني", "کوریايي", "ترکي", "روسي",
+        "فرانسوي", "جرمني", "هسپانوي", "اندونیزیایي", "مالایي", "تامیلي",
+        "تیلګو", "ایټالوي", "پرتګالي", "هالنډي", "پولنډي", "اوکرایني",
+        "یوناني", "عبراني", "سویډني", "نارویژي", "ډنمارکي", "فنلنډي",
+        "چکي", "رومانیایي", "هنګري", "بلغاریايي", "سواحلي", "تایلنډي",
+        "ویتنامي", "نیپالي", "ازبکي"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +51,7 @@ class MainActivity : Activity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(8, 8, 8, 14)
+            setPadding(8, 8, 8, 10)
         }
 
         val title = TextView(this).apply {
@@ -53,7 +64,7 @@ class MainActivity : Activity() {
         header.addView(title)
 
         val subtitle = TextView(this).apply {
-            text = "ستاسو هوښیار مرستیال"
+            text = "ستاسو څو ژبی هوښیار مرستیال"
             textSize = 14f
             setTextColor(Color.LTGRAY)
             gravity = Gravity.CENTER
@@ -63,12 +74,22 @@ class MainActivity : Activity() {
         root.addView(header)
 
         val status = TextView(this).apply {
-            text = "●  د OpenAI چټ"
+            text = "●  آنلاین څو ژبی AI"
             textSize = 12f
             setTextColor(Color.rgb(112, 220, 160))
-            setPadding(4, 0, 0, 8)
+            setPadding(4, 0, 0, 4)
         }
         root.addView(status)
+
+        languagePicker = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_item,
+                languages
+            ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+            setSelection(0)
+        }
+        root.addView(languagePicker, LinearLayout.LayoutParams(-1, -2))
 
         scroll = ScrollView(this)
         messages = LinearLayout(this).apply {
@@ -78,10 +99,10 @@ class MainActivity : Activity() {
         scroll.addView(messages)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        addMessage("سلام! زه HAMA AI یم. د OpenAI په مرسته به ستا پوښتنو ته ځواب درکوم.", false)
+        addMessage("سلام! زه HAMA AI یم. خپله ژبه وټاکئ یا Auto-detect پرېږدئ.", false)
 
         val hint = TextView(this).apply {
-            text = "یوه پوښتنه ولیکئ"
+            text = "خپل پیغام ولیکئ"
             textSize = 12f
             setTextColor(Color.LTGRAY)
             setPadding(2, 6, 2, 4)
@@ -96,7 +117,7 @@ class MainActivity : Activity() {
         }
 
         input = EditText(this).apply {
-            setHint("پیغام ولیکئ...")
+            hint = "پیغام ولیکئ..."
             setTextColor(Color.WHITE)
             setHintTextColor(Color.LTGRAY)
             textSize = 16f
@@ -124,6 +145,7 @@ class MainActivity : Activity() {
         val message = input.text.toString().trim()
         if (message.isEmpty()) return
 
+        val selectedLanguage = languagePicker.selectedItem?.toString() ?: "Auto-detect"
         addMessage(message, true)
         input.text.clear()
         send.isEnabled = false
@@ -131,20 +153,18 @@ class MainActivity : Activity() {
         val waiting = addMessage("ځواب ترلاسه کوم...", false)
 
         Thread {
-            var reply: String
+            val reply: String
             try {
-                if (apiUrl.contains("YOUR-WORKER-NAME")) {
-                    throw IllegalStateException("سرور لا نه دی وصل شوی. د Worker URL باید تنظیم شي.")
-                }
                 val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     connectTimeout = 20000
-                    readTimeout = 60000
+                    readTimeout = 90000
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 }
+                val payload = JSONObject().put("message", message).put("language", selectedLanguage)
                 connection.outputStream.use {
-                    it.write(JSONObject().put("message", message).toString().toByteArray(Charsets.UTF_8))
+                    it.write(payload.toString().toByteArray(Charsets.UTF_8))
                 }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
