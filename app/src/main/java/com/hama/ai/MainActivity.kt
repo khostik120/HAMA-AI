@@ -1058,10 +1058,16 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    selectedLanguage = languages[position]
+                    val chosenLanguage = languages[position]
+                    // Android reports the current Spinner item when the page first opens.
+                    // Ignore that initial callback; only react to an actual language change.
+                    if (chosenLanguage == selectedLanguage) return
+                    selectedLanguage = chosenLanguage
                     prefs.edit().putString("selected_language", selectedLanguage).apply()
                     current.text = "${tr("current_language")}: $selectedLanguage"
-                    root.post { showSettings() }
+                    applyLanguageDirection()
+                    // Rebuild this page in the newly selected language without closing the picker.
+                    root.post { showLanguageSettings() }
                 }
             }
         }
