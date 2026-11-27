@@ -297,8 +297,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun editProject(item: JSONObject) {
         val fields = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL            setPadding(8, 4, 8, 0)
-        }
+            orientation = LinearLayout.VERTICAL            setPadding(8, 4, 8, 0)        }
         val nameField = EditText(this).apply {
             hint = "د پروژې نوم"
             setText(item.optString("name"))
@@ -481,7 +480,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         val voiceReply = actionButton(if (speakReplies) "🔊" else "🔈", "د AI ځوابونه په غږ اورېدل") {
             speakReplies = !speakReplies
             prefs.edit().putBoolean("speak_replies", speakReplies).apply()
-            voiceReply.text = if (speakReplies) "🔊" else "🔈"
+            (actions.getChildAt(2) as TextView).text = if (speakReplies) "🔊" else "🔈"
         }
         actions.addView(voiceReply, LinearLayout.LayoutParams(46, 44).apply { marginEnd = 7 })
         actions.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
@@ -597,8 +596,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         requestCancelled = false
         sendButton.isEnabled = true
         sendButton.text = "×"
-        waitingRow = addMessage("ځواب ترلاسه کوم...  ·  د بندولو لپاره × کېکاږئ", false, false)
-        Thread {
+        waitingRow = addMessage("ځواب ترلاسه کوم...  ·  د بندولو لپاره × کېکاږئ", false, false)        Thread {
             val answer = try {
                 val connection = URL(apiUrl).openConnection() as HttpURLConnection
                 activeConnection = connection
@@ -897,8 +895,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "application/json"
-            }
-            startActivityForResult(pick, 605)
+            }            startActivityForResult(pick, 605)
         })
         root.addView(smallButton("د ځواب غږ ازموینه") {
             if (speechReady) speech.speak("سلام! زه HAMA AI یم.", TextToSpeech.QUEUE_FLUSH, null, "hama-test")
