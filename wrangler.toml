@@ -1,0 +1,6 @@
+name = "cool-brook-c584"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-11-26"
+
+[ai]
+binding = "AI"
