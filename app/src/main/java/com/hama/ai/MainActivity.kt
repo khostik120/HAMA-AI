@@ -508,7 +508,20 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             topMargin = (7 * resources.displayMetrics.density).toInt()
             bottomMargin = (4 * resources.displayMetrics.density).toInt()
         })
-        root.addView(bottomNav("chat"))
+        val chatNav = bottomNav("chat")
+        root.addView(chatNav)
+        // Hide the app navigation row while the IME is open so the composer
+        // and its action buttons remain visible above the system navigation bar.
+        root.viewTreeObserver.addOnGlobalLayoutListener {
+            if (!root.isAttachedToWindow) return@addOnGlobalLayoutListener
+            val visibleFrame = android.graphics.Rect()
+            root.getWindowVisibleDisplayFrame(visibleFrame)
+            val fullHeight = root.rootView.height
+            val keyboardVisible = fullHeight > 0 &&
+                (fullHeight - visibleFrame.bottom) > (fullHeight * 0.18f)
+            chatNav.visibility = if (keyboardVisible) View.GONE else View.VISIBLE
+            if (keyboardVisible) scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
     }
 
     private fun smallButton(label: String, action: () -> Unit): Button = Button(this).apply {
