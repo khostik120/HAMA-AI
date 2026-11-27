@@ -671,8 +671,18 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                     if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "متن فایل"
                 } ?: "متن فایل"
-                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText(60001) }
-                    ?: throw IllegalStateException("فایل نه لوستل کېږي")
+                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                    val output = StringBuilder()
+                    val buffer = CharArray(4096)
+                    while (true) {
+                        val remaining = 60001 - output.length
+                        if (remaining <= 0) break
+                        val count = reader.read(buffer, 0, minOf(buffer.size, remaining))
+                        if (count < 0) break
+                        output.append(buffer, 0, count)
+                    }
+                    output.toString()
+                } ?: throw IllegalStateException("فایل نه لوستل کېږي")
                 if (text.length > 60000) throw IllegalArgumentException("فایل ډېر لوی دی؛ تر ۶۰ زره تورو کوچنی فایل وټاکئ.")
                 pendingAttachmentText = text
                 pendingAttachmentName = name
