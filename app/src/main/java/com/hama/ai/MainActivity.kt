@@ -48,6 +48,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private var currentChatId = System.currentTimeMillis().toString()
     private val chatMessages = mutableListOf<JSONObject>()
     private var waitingRow: View? = null
+    private var pendingAttachmentText: String? = null
+    private var pendingAttachmentName: String? = null
     private val libraryItems get() = try { JSONArray(prefs.getString("library_items", "[]")) } catch (_: Exception) { JSONArray() }
     private val projectItems get() = try { JSONArray(prefs.getString("project_items", "[]")) } catch (_: Exception) { JSONArray() }
 
@@ -305,6 +307,21 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             }
         }
         composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        val attach = TextView(this).apply {
+            text = "📎"
+            textSize = 19f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setPadding(8, 10, 8, 10)
+            setOnClickListener {
+                val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "*/*"
+                }
+                startActivityForResult(pick, 603)
+            }
+        }
+        composer.addView(attach, LinearLayout.LayoutParams(42, 48))
         val mic = TextView(this).apply {
             text = "🎙"
             textSize = 20f
@@ -388,9 +405,21 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun sendMessage() {
-        val message = input.text.toString().trim()
-        if (message.isEmpty()) return
-        addMessage(message, true, true)
+        val typedMessage = input.text.toString().trim()
+        if (typedMessage.isEmpty() && pendingAttachmentText.isNullOrBlank()) return
+        val attachmentText = pendingAttachmentText
+        val attachmentName = pendingAttachmentName
+        val message = buildString {
+            if (typedMessage.isNotEmpty()) append(typedMessage)
+            if (!attachmentText.isNullOrBlank()) {
+                if (isNotEmpty()) append("\\n\\n")
+                append("د ضمیمه شوي فایل نوم: ").append(attachmentName ?: "فایل")
+                append("\\nد فایل متن:\\n").append(attachmentText)
+            }
+        }
+        addMessage(if (attachmentName != null) (if (typedMessage.isNotEmpty()) "$typedMessage\\n📎 $attachmentName" else "📎 $attachmentName") else message, true, true)
+        pendingAttachmentText = null
+        pendingAttachmentName = null
         input.text.clear()
         sendButton.isEnabled = false
         sendButton.text = "..."
@@ -630,6 +659,29 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 603 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                val mime = contentResolver.getType(uri) ?: ""
+                if (!(mime.startsWith("text/") || mime.contains("json") || mime.contains("xml") || mime.contains("javascript"))) {
+                    Toast.makeText(this, "اوس یوازې د متن، JSON، XML او کوډ فایلونه ملاتړ کېږي.", Toast.LENGTH_LONG).show()
+                    return
+                }
+                val name = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "متن فایل"
+                } ?: "متن فایل"
+                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText(60001) }
+                    ?: throw IllegalStateException("فایل نه لوستل کېږي")
+                if (text.length > 60000) throw IllegalArgumentException("فایل ډېر لوی دی؛ تر ۶۰ زره تورو کوچنی فایل وټاکئ.")
+                pendingAttachmentText = text
+                pendingAttachmentName = name
+                Toast.makeText(this, "ضمیمه شوه: $name — اوس خپل سوال ولیکئ او واستوئ.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "فایل لوستل کېدای نه شي.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if (requestCode == 602 && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
             try {
