@@ -26,6 +26,20 @@ export default {
       const body = await request.json();
       const message = typeof body.message === "string" ? body.message.trim() : "";
       const language = typeof body.language === "string" ? body.language.trim() : "Auto-detect";
+      const history = Array.isArray(body.messages)
+        ? body.messages
+            .filter((item) =>
+              item &&
+              (item.role === "user" || item.role === "assistant") &&
+              typeof item.content === "string" &&
+              item.content.trim()
+            )
+            .slice(-12)
+            .map((item) => ({
+              role: item.role,
+              content: item.content.trim().slice(0, 4000),
+            }))
+        : [];
 
       if (!message) return json({ error: "Please enter a message." }, 400);
       if (message.length > 8000) return json({ error: "Message is too long." }, 413);
@@ -43,7 +57,12 @@ export default {
       const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message }
+          ...history,
+          ...(history.length > 0 &&
+            history[history.length - 1].role === "user" &&
+            history[history.length - 1].content === message
+              ? []
+              : [{ role: "user", content: message }]),
         ],
         max_completion_tokens: 1200
       });
