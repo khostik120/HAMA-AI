@@ -1,4 +1,9 @@
-name = "cool-brook-c584"
+name = "raspy-pine-732d"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-11-26"
+
+[ai]
+binding = "AI"
 main = "cloudflare-worker.js"
 compatibility_date = "2026-11-26"
 
