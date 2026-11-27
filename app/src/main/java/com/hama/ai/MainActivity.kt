@@ -23,8 +23,8 @@ class MainActivity : Activity() {
     private val panel = Color.rgb(24, 33, 54)
     private val accent = Color.rgb(91, 124, 250)
 
-    // This endpoint contains no secret key. The AI runs through the Cloudflare Worker.
-    private val apiUrl = "https://cool-brook-c584.khosthroe892.workers.dev/chat"
+    // Cloudflare Worker endpoint for HAMA AI.
+    private val apiUrl = "https://raspy-pine-732d.afhhanking222q.workers.dev/chat"
 
     private val languages = listOf(
         "Auto-detect", "پښتو", "دري", "انګلیسي", "عربي", "اردو", "فارسي",
@@ -117,7 +117,7 @@ class MainActivity : Activity() {
         }
 
         input = EditText(this).apply {
-            hint = "پیغام ولیکئ..."
+            this.hint = "پیغام ولیکئ..."
             setTextColor(Color.WHITE)
             setHintTextColor(Color.LTGRAY)
             textSize = 16f
@@ -153,7 +153,7 @@ class MainActivity : Activity() {
         val waiting = addMessage("ځواب ترلاسه کوم...", false)
 
         Thread {
-            val reply: String
+            var reply: String
             try {
                 val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
