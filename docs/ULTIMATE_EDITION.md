@@ -10,7 +10,7 @@ HAMA AI is an Android AI assistant with a clean, accessible chat interface, loca
 - Conversation history stored locally using Android SharedPreferences, with live search across saved chat titles and message text; rename chats and share a plain-text transcript from the history list.
 - Copy and share actions on messages; assistant messages can be read with Android TextToSpeech.
 - Speech-to-text input through Android SpeechRecognizer (device/provider support required).
-- Persistent local Projects list (create and delete).
+- Persistent local Projects list with create, optional descriptions, edit/rename, share as text, and delete; older project records without descriptions remain readable.
 - Local Library index using Android Storage Access Framework (add, open, remove document references).
 - Attach supported text, JSON, XML, and source-code files to a chat prompt (up to 60,000 characters); file content is sent to the configured online Worker.
 - Export and import a JSON backup of conversation history, project names, Library URI references, profile name, selected language, and auto-speech setting; imports merge chats, projects, and Library entries without replacing matching IDs/names/URIs.
