@@ -1,9 +1,5 @@
-name = "raspy-pine-732d"
-main = "cloudflare-worker.js"
-compatibility_date = "2026-11-26"
 
-[ai]
-binding = "AI"
+name = "raspy-pine-732d"
 main = "cloudflare-worker.js"
 compatibility_date = "2026-11-26"
 
