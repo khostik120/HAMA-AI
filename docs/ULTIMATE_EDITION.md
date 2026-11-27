@@ -13,7 +13,9 @@ HAMA AI is an Android AI assistant with a clean, accessible chat interface, loca
 - Persistent local Projects list (create and delete).
 - Local Library index using Android Storage Access Framework (add, open, remove document references).
 - Attach supported text, JSON, XML, and source-code files to a chat prompt (up to 60,000 characters); file content is sent to the configured online Worker.
-- Export and import a JSON backup of conversation history and project names; imports merge without replacing matching chat IDs or project names.
+- Export and import a JSON backup of conversation history, project names, Library URI references, profile name, selected language, and auto-speech setting; imports merge chats, projects, and Library entries without replacing matching IDs/names/URIs.
+- Remember the selected response language across app restarts.
+- Note: Library backup stores Android document URI references, not copies of the actual files; those references may not work on another device or after provider access changes.
 - Cancel an in-progress online AI request from the send button.
 - Profile name stored on device.
 - Settings for response language, automatic spoken replies, and clearing chat history.
@@ -36,7 +38,7 @@ HAMA AI is an Android AI assistant with a clean, accessible chat interface, loca
 | Coding tools | Not implemented | Requires model/tool execution design and sandboxing |
 | On-device/offline LLM | Not implemented | Requires selecting, packaging/downloading, and benchmarking a compatible model |
 | Streaming responses | Not implemented | Current client reads a complete JSON response |
-| Chat/project backup | Implemented | JSON export/import; imports merge by chat ID and project name |
+| App data backup | Implemented | JSON export/import for chats, projects, Library references, profile name, language, and auto-speech; actual Library file bytes are not copied |
 | Cancel AI request | Implemented | Disconnects the active HTTP request; cancellation behavior still needs device testing |
 | Encrypted local storage | Not implemented | Requires key management and migration plan |
 
@@ -62,7 +64,8 @@ A source ZIP size is not a quality metric. Do not add filler code or duplicated 
 - [ ] Verify project create/delete persistence.
 - [ ] Verify document add/open/remove flows.
 - [ ] Verify supported text/code attachment, empty file, oversized file, and unsupported MIME type.
-- [ ] Verify JSON backup export/import and duplicate merge behavior.
+- [ ] Verify JSON backup export/import and duplicate merge behavior for chats, projects, Library references, and settings.
+- [ ] Verify restored Android document URI references on the same device and confirm expected behavior on another device.
 - [ ] Verify cancelling before connection, during upload, and while waiting for the server response.
 - [ ] Verify speech permission denied/granted flows.
 - [ ] Verify accessibility, RTL, small screens, and keyboard behavior.
