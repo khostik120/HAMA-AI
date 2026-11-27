@@ -554,33 +554,76 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showHistory() {
-        baseScreen("د خبرو تاریخچه", "خپل پخواني چټونه بېرته پرانیزئ")
+        baseScreen("د خبرو تاریخچه", "پخواني چټونه ولټوئ او بېرته یې پرانیزئ")
         val list = loadChats()
-        if (list.length() == 0) root.addView(TextView(this).apply {
-            text = "تر اوسه کوم پخوانی چټ نشته."
+        val search = EditText(this).apply {
+            hint = "🔎 د خبرو په نوم یا متن کې لټون..."
             setTextColor(Color.WHITE)
-            textSize = 16f
-        })
-        for (i in list.length() - 1 downTo 0) {
-            val item = list.optJSONObject(i) ?: continue
-            val row = TextView(this).apply {
-                text = "💬  " + item.optString("title", "نوی چټ") + "\n" + item.optString("date", "")
-                textSize = 15f
-                setTextColor(Color.WHITE)
-                setPadding(14, 14, 14, 14)
-                setBackgroundColor(panel)
-                setOnClickListener { openChat(item) }
-                setOnLongClickListener {
-                    AlertDialog.Builder(this@MainActivity).setMessage("دا چټ حذف شي؟")
-                        .setNegativeButton("نه", null).setPositiveButton("هو") { _, _ ->
-                            list.remove(i); prefs.edit().putString("chats", list.toString()).apply(); showHistory()
-                        }.show()
-                    true
-                }
-            }
-            val lp = LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, 5, 0, 5)
-            root.addView(row, lp)
+            setHintTextColor(muted)
+            textSize = 15f
+            singleLine = true
+            background = rounded(panel, 16f)
+            setPadding(14, 12, 14, 12)
         }
+        root.addView(search, LinearLayout.LayoutParams(-1, -2))
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val resultScroll = ScrollView(this)
+        resultScroll.addView(results)
+        root.addView(resultScroll, LinearLayout.LayoutParams(-1, 0, 1f))
+
+        fun renderHistory(query: String) {
+            results.removeAllViews()
+            val needle = query.trim().lowercase(Locale.ROOT)
+            var matches = 0
+            for (i in list.length() - 1 downTo 0) {
+                val item = list.optJSONObject(i) ?: continue
+                val title = item.optString("title", "نوی چټ")
+                val messagesArray = item.optJSONArray("messages") ?: JSONArray()
+                val searchable = buildString {
+                    append(title).append(' ')
+                    for (j in 0 until messagesArray.length()) {
+                        append(messagesArray.optJSONObject(j)?.optString("text") ?: "").append(' ')
+                    }
+                }.lowercase(Locale.ROOT)
+                if (needle.isNotEmpty() && !searchable.contains(needle)) continue
+                matches++
+                val row = TextView(this).apply {
+                    text = "💬  $title\n" + item.optString("date", "") + "\n" +
+                        messagesArray.length().toString() + " پیغامونه"
+                    textSize = 15f
+                    setTextColor(Color.WHITE)
+                    setPadding(14, 14, 14, 14)
+                    background = rounded(panel, 14f)
+                    setOnClickListener { openChat(item) }
+                    setOnLongClickListener {
+                        AlertDialog.Builder(this@MainActivity).setMessage("دا چټ حذف شي؟")
+                            .setNegativeButton("نه", null).setPositiveButton("هو") { _, _ ->
+                                list.remove(i)
+                                prefs.edit().putString("chats", list.toString()).apply()
+                                renderHistory(search.text.toString())
+                            }.show()
+                        true
+                    }
+                }
+                val lp = LinearLayout.LayoutParams(-1, -2)
+                lp.setMargins(0, 5, 0, 5)
+                results.addView(row, lp)
+            }
+            if (matches == 0) results.addView(TextView(this).apply {
+                text = if (needle.isEmpty()) "تر اوسه کوم پخوانی چټ نشته." else "د دې لټون لپاره نتیجه پیدا نه شوه."
+                setTextColor(muted)
+                textSize = 15f
+                setPadding(12, 24, 12, 24)
+            })
+        }
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                renderHistory(s?.toString() ?: "")
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        renderHistory("")
         root.addView(smallButton("＋ نوی چټ") { newChat() })
         root.addView(bottomNav("history"))
     }
