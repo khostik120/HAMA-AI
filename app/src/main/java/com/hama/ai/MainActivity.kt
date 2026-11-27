@@ -50,6 +50,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private var waitingRow: View? = null
     private var pendingAttachmentText: String? = null
     private var pendingAttachmentName: String? = null
+    @Volatile private var requestRunning = false
+    @Volatile private var requestCancelled = false
+    @Volatile private var activeConnection: HttpURLConnection? = null
     private val libraryItems get() = try { JSONArray(prefs.getString("library_items", "[]")) } catch (_: Exception) { JSONArray() }
     private val projectItems get() = try { JSONArray(prefs.getString("project_items", "[]")) } catch (_: Exception) { JSONArray() }
 
@@ -405,6 +408,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun sendMessage() {
+        if (requestRunning) {
+            requestCancelled = true
+            activeConnection?.disconnect()
+            sendButton.isEnabled = false
+            sendButton.text = "..."
+            return
+        }
         val typedMessage = input.text.toString().trim()
         if (typedMessage.isEmpty() && pendingAttachmentText.isNullOrBlank()) return
         val attachmentText = pendingAttachmentText
@@ -421,12 +431,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         pendingAttachmentText = null
         pendingAttachmentName = null
         input.text.clear()
-        sendButton.isEnabled = false
-        sendButton.text = "..."
-        waitingRow = addMessage("ځواب ترلاسه کوم...", false, false)
+        requestRunning = true
+        requestCancelled = false
+        sendButton.isEnabled = true
+        sendButton.text = "×"
+        waitingRow = addMessage("ځواب ترلاسه کوم...  ·  د بندولو لپاره × کېکاږئ", false, false)
         Thread {
             val answer = try {
                 val connection = URL(apiUrl).openConnection() as HttpURLConnection
+                activeConnection = connection
                 connection.requestMethod = "POST"
                 connection.connectTimeout = 20000
                 connection.readTimeout = 90000
@@ -447,17 +460,26 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
                 val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 connection.disconnect()
+                activeConnection = null
                 val json = JSONObject(raw)
                 if (code !in 200..299) throw IllegalStateException(json.optString("error", "د سرور تېروتنه"))
                 json.optString("reply", "ځواب ترلاسه نه شو.")
             } catch (e: Exception) {
-                e.message ?: "انټرنېټ یا سرور کې ستونزه ده."
+                if (requestCancelled) "" else (e.message ?: "انټرنېټ یا سرور کې ستونزه ده.")
+            } finally {
+                activeConnection = null
             }
             runOnUiThread {
                 waitingRow?.let { messages.removeView(it) }
                 waitingRow = null
-                addMessage(answer, false, true)
-                if (speakReplies && speechReady) speech.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "hama-reply")
+                if (requestCancelled) {
+                    Toast.makeText(this, "غوښتنه بنده شوه.", Toast.LENGTH_SHORT).show()
+                } else {
+                    addMessage(answer, false, true)
+                    if (speakReplies && speechReady) speech.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "hama-reply")
+                }
+                requestRunning = false
+                requestCancelled = false
                 sendButton.isEnabled = true
                 sendButton.text = "ولېږه"
             }
