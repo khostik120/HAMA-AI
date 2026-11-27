@@ -668,14 +668,14 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun shareChat(item: JSONObject) {
         val entries = item.optJSONArray("messages") ?: JSONArray()
         val transcript = buildString {
-            append(item.optString("title", "HAMA AI چټ")).append("\\n")
-            append(item.optString("date", "")).append("\\n\\n")
+            append(item.optString("title", "HAMA AI چټ")).append("\n")
+            append(item.optString("date", "")).append("\n\n")
             for (i in 0 until entries.length()) {
                 val message = entries.optJSONObject(i) ?: continue
                 append(if (message.optBoolean("user")) "تاسو" else "HAMA AI")
-                append(":\\n")
+                append(":\n")
                 append(message.optString("text"))
-                append("\\n\\n")
+                append("\n\n")
             }
         }
         val share = Intent(Intent.ACTION_SEND).apply {
