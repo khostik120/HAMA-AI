@@ -39,7 +39,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var languagePicker: Spinner
     private lateinit var speech: TextToSpeech
     private var speechReady = false
-    private var speakReplies = prefs.getBoolean("speak_replies", false)
+    private var speakReplies = false
     private var recognizer: SpeechRecognizer? = null
     private var selectedLanguage = "Auto-detect"
     private var currentChatId = System.currentTimeMillis().toString()
@@ -48,6 +48,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        speakReplies = prefs.getBoolean("speak_replies", false)
         window.statusBarColor = navy
         window.navigationBarColor = navy
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
