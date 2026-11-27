@@ -1,0 +1,61 @@
+# HAMA AI — Ultimate Edition
+
+## Product goals
+
+HAMA AI is an Android AI assistant with a clean, accessible chat interface, local conversation storage, optional speech input/output, and a modular path toward multimodal and offline capabilities.
+
+## Current implementation in this repository
+
+- Chat screen with selectable response language.
+- Conversation history stored locally using Android SharedPreferences.
+- Copy and share actions on messages; assistant messages can be read with Android TextToSpeech.
+- Speech-to-text input through Android SpeechRecognizer (device/provider support required).
+- Persistent local Projects list (create and delete).
+- Local Library index using Android Storage Access Framework (add, open, remove document references).
+- Profile name stored on device.
+- Settings for response language, automatic spoken replies, and clearing chat history.
+- Online chat backend configured through the Cloudflare Worker endpoint in MainActivity.
+
+## Capability roadmap
+
+| Capability | Status | Notes |
+|---|---|---|
+| Text chat | Implemented | Uses configured remote Worker endpoint |
+| Conversation history | Implemented | Stored on device |
+| Speech input | Implemented | Android speech service and microphone permission required |
+| Text-to-speech | Implemented | Uses installed Android TTS voices |
+| Projects | Basic local implementation | Project names are stored locally |
+| File Library | Basic local implementation | Stores document URI references; does not yet parse file contents |
+| Image understanding | Not implemented | Requires image-capable model and secure backend upload |
+| Image generation | Not implemented | Requires a generation model/service |
+| Video generation/analysis | Not implemented | Requires dedicated model/service and substantial compute |
+| Web search | Not implemented | Requires a search provider/backend |
+| Coding tools | Not implemented | Requires model/tool execution design and sandboxing |
+| On-device/offline LLM | Not implemented | Requires selecting, packaging/downloading, and benchmarking a compatible model |
+| Streaming responses | Not implemented | Current client reads a complete JSON response |
+| Encrypted local storage | Not implemented | Requires key management and migration plan |
+
+## Engineering requirements
+
+1. Do not embed provider API secrets in the Android application. Keep credentials on a trusted backend.
+2. Treat uploaded files as untrusted input. Validate MIME type and size; do not execute uploaded content.
+3. Ask permission before microphone, camera, or file access; use Android's system document picker where possible.
+4. Make network calls cancellable, bounded by timeouts, and resilient to offline conditions.
+5. Keep large language models optional and measure memory, storage, battery, and latency on target devices.
+6. Add automated unit/instrumentation tests and verify a release build before publishing an APK.
+
+## ZIP and model size
+
+A source ZIP size is not a quality metric. Do not add filler code or duplicated data to inflate archives. If an offline model is included, document its origin, license, checksum, actual size, supported languages, and device requirements. Keep model binaries separate from the source archive when licensing or distribution size requires it.
+
+## Release acceptance checklist
+
+- [ ] Gradle build succeeds in CI.
+- [ ] Install and launch on a physical Android device.
+- [ ] Verify chat success, server errors, timeout, and no-network states.
+- [ ] Verify history persistence after app restart.
+- [ ] Verify project create/delete persistence.
+- [ ] Verify document add/open/remove flows.
+- [ ] Verify speech permission denied/granted flows.
+- [ ] Verify accessibility, RTL, small screens, and keyboard behavior.
+- [ ] Verify no secrets are committed.
