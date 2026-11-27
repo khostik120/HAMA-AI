@@ -59,6 +59,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         speakReplies = prefs.getBoolean("speak_replies", false)
+        selectedLanguage = prefs.getString("selected_language", "Auto-detect") ?: "Auto-detect"
         window.statusBarColor = navy
         window.navigationBarColor = navy
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -272,6 +273,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     selectedLanguage = languages[position]
+                    prefs.edit().putString("selected_language", selectedLanguage).apply()
                 }
             }
         }
@@ -634,6 +636,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     selectedLanguage = languages[position]
+                    prefs.edit().putString("selected_language", selectedLanguage).apply()
                 }
             }
         }
@@ -662,7 +665,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 }.show()
         })
         root.addView(TextView(this).apply {
-            text = "نسخه 1.1\nHAMA AI — څو ژبی هوښیار مرستیال"
+            text = "نسخه 1.3\nHAMA AI — څو ژبی هوښیار مرستیال"
             textSize = 12f
             setTextColor(muted)
             setPadding(0, 20, 0, 10)
@@ -711,6 +714,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     .put("exportedAt", System.currentTimeMillis())
                     .put("chats", loadChats())
                     .put("projects", projectItems)
+                    .put("library", libraryItems)
+                    .put("selectedLanguage", selectedLanguage)
+                    .put("speakReplies", speakReplies)
+                    .put("profileName", prefs.getString("profile_name", "HAMA AI کاروونکی"))
                 contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
                     it.write(backup.toString(2))
                 } ?: throw IllegalStateException("فایل ته لیکل ممکن نه شول")
@@ -752,7 +759,34 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     if (name.isNotBlank() && projectNames.add(name)) mergedProjects.put(item)
                 }
                 prefs.edit().putString("project_items", mergedProjects.toString()).apply()
-                Toast.makeText(this, "$added نوې خبرې بېرته وارد شوې.", Toast.LENGTH_LONG).show()
+                val incomingLibrary = backup.optJSONArray("library") ?: JSONArray()
+                val mergedLibrary = libraryItems
+                val knownUris = HashSet<String>()
+                for (i in 0 until mergedLibrary.length()) knownUris.add(mergedLibrary.optJSONObject(i)?.optString("uri") ?: "")
+                var libraryAdded = 0
+                for (i in 0 until incomingLibrary.length()) {
+                    val entry = incomingLibrary.optJSONObject(i) ?: continue
+                    val uri = entry.optString("uri")
+                    if (uri.isNotBlank() && knownUris.add(uri)) {
+                        mergedLibrary.put(entry)
+                        libraryAdded++
+                    }
+                }
+                val editor = prefs.edit()
+                    .putString("project_items", mergedProjects.toString())
+                    .putString("library_items", mergedLibrary.toString())
+                val restoredLanguage = backup.optString("selectedLanguage")
+                if (restoredLanguage in languages) {
+                    selectedLanguage = restoredLanguage
+                    editor.putString("selected_language", restoredLanguage)
+                }
+                if (backup.has("speakReplies")) {
+                    speakReplies = backup.optBoolean("speakReplies")
+                    editor.putBoolean("speak_replies", speakReplies)
+                }
+                if (backup.has("profileName")) editor.putString("profile_name", backup.optString("profileName"))
+                editor.apply()
+                Toast.makeText(this, "$added خبرې او $libraryAdded فایلونه وارد شول. د پروژو او تنظیماتو معلومات هم یوځای شول.", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
                 Toast.makeText(this, e.message ?: "بیک اپ وارد نه شو.", Toast.LENGTH_LONG).show()
             }
