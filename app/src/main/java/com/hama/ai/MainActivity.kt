@@ -259,8 +259,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val row = TextView(this).apply {
                 val description = item.optString("description")
                 text = "▣  " + item.optString("name") +
-                    (if (description.isNotBlank()) "\\n$description" else "") +
-                    "\\n" + if (item.has("updated")) "تازه شوی: " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date(item.optLong("updated"))) else "پخوانۍ پروژه"
+                    (if (description.isNotBlank()) "\n$description" else "") +
+                    "\n" + if (item.has("updated")) "تازه شوی: " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date(item.optLong("updated"))) else "پخوانۍ پروژه"
                 textSize = 15f; setTextColor(Color.WHITE); setPadding(14, 16, 14, 16)
                 background = rounded(panel, 16f)
                 setOnClickListener { editProject(item) }
@@ -333,9 +333,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun shareProject(item: JSONObject) {
         val content = buildString {
-            append(item.optString("name", "HAMA AI Project")).append("\\n\\n")
-            append(item.optString("description", "تشریح نشته")).append("\\n")
-            if (item.has("created")) append("جوړه شوې: ").append(item.optLong("created")).append("\\n")
+            append(item.optString("name", "HAMA AI Project")).append("\n\n")
+            append(item.optString("description", "تشریح نشته")).append("\n")
+            if (item.has("created")) append("جوړه شوې: ").append(item.optLong("created")).append("\n")
         }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
