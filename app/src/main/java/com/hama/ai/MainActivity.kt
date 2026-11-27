@@ -48,6 +48,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private var currentChatId = System.currentTimeMillis().toString()
     private val chatMessages = mutableListOf<JSONObject>()
     private var waitingRow: View? = null
+    private val libraryItems get() = try { JSONArray(prefs.getString("library_items", "[]")) } catch (_: Exception) { JSONArray() }
+    private val projectItems get() = try { JSONArray(prefs.getString("project_items", "[]")) } catch (_: Exception) { JSONArray() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -175,33 +177,76 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showLibrary() {
-        baseScreen("Library", "ستاسو خوندي شوي توکي")
-        root.addView(TextView(this).apply {
-            text = "ستاسو فایلونه او خوندي شوي توکي به دلته ښکاره شي."
-            textSize = 15f
-            setTextColor(muted)
-            setPadding(12, 24, 12, 24)
+        baseScreen("Library", "ستاسو خوندي شوي فایلونه")
+        root.addView(smallButton("＋ فایل اضافه کړئ") {
+            val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+            startActivityForResult(pick, 602)
         })
+        val items = libraryItems
+        if (items.length() == 0) root.addView(TextView(this).apply {
+            text = "تر اوسه فایل نشته. د فایل اضافه کولو تڼۍ وکاروئ."
+            textSize = 15f; setTextColor(muted); setPadding(12, 24, 12, 24)
+        })
+        for (i in 0 until items.length()) {
+            val item = items.optJSONObject(i) ?: continue
+            val row = TextView(this).apply {
+                text = "📄  " + item.optString("name", "فایل") + "\\n" + item.optString("uri")
+                textSize = 13f; setTextColor(Color.WHITE); setPadding(12, 14, 12, 14)
+                setOnClickListener {
+                    try { startActivity(Intent(Intent.ACTION_VIEW).setData(android.net.Uri.parse(item.optString("uri"))).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
+                    catch (_: Exception) { Toast.makeText(this@MainActivity, "فایل نه خلاصیږي.", Toast.LENGTH_SHORT).show() }
+                }
+                setOnLongClickListener {
+                    AlertDialog.Builder(this@MainActivity).setMessage("دا فایل له Library څخه لرې شي؟")
+                        .setNegativeButton("نه", null).setPositiveButton("هو") { _, _ ->
+                            items.remove(i); prefs.edit().putString("library_items", items.toString()).apply(); showLibrary()
+                        }.show(); true
+                }
+            }
+            root.addView(row)
+        }
         root.addView(bottomNav("library"))
     }
 
     private fun showProjects() {
         baseScreen("Projects", "خپل کارونه منظم کړئ")
-        root.addView(TextView(this).apply {
-            text = "تر اوسه کومه پروژه نه ده جوړه شوې."
-            textSize = 15f
-            setTextColor(muted)
-            setPadding(12, 24, 12, 24)
-        })
         root.addView(smallButton("＋ نوې پروژه") {
             val field = EditText(this).apply { hint = "د پروژې نوم" }
             AlertDialog.Builder(this).setTitle("نوې پروژه").setView(field)
                 .setNegativeButton("لغوه", null)
                 .setPositiveButton("جوړول") { _, _ ->
                     val name = field.text.toString().trim()
-                    if (name.isNotEmpty()) Toast.makeText(this, "پروژه: $name", Toast.LENGTH_SHORT).show()
+                    if (name.isNotEmpty()) {
+                        val all = projectItems
+                        all.put(JSONObject().put("name", name).put("created", System.currentTimeMillis()))
+                        prefs.edit().putString("project_items", all.toString()).apply()
+                        showProjects()
+                    }
                 }.show()
         })
+        val all = projectItems
+        if (all.length() == 0) root.addView(TextView(this).apply {
+            text = "تر اوسه پروژه نشته. خپله لومړۍ پروژه جوړه کړئ."
+            textSize = 15f; setTextColor(muted); setPadding(12, 24, 12, 24)
+        })
+        for (i in 0 until all.length()) {
+            val item = all.optJSONObject(i) ?: continue
+            val row = TextView(this).apply {
+                text = "▣  " + item.optString("name")
+                textSize = 16f; setTextColor(Color.WHITE); setPadding(14, 16, 14, 16)
+                background = rounded(panel, 16f)
+                setOnLongClickListener {
+                    AlertDialog.Builder(this@MainActivity).setMessage("پروژه حذف شي؟")
+                        .setNegativeButton("نه", null).setPositiveButton("حذف") { _, _ ->
+                            all.remove(i); prefs.edit().putString("project_items", all.toString()).apply(); showProjects()
+                        }.show(); true
+                }
+            }
+            val lp = LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, 6, 0, 6); root.addView(row, lp)
+        }
         root.addView(bottomNav("projects"))
     }
 
@@ -581,6 +626,27 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
         if (!found) all.put(item)
         prefs.edit().putString("chats", all.toString()).apply()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 602 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+            val name = try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "فایل"
+                } ?: "فایل"
+            } catch (_: Exception) { "فایل" }
+            val all = libraryItems
+            all.put(JSONObject().put("name", name).put("uri", uri.toString()))
+            prefs.edit().putString("library_items", all.toString()).apply()
+            Toast.makeText(this, "فایل Library ته اضافه شو.", Toast.LENGTH_SHORT).show()
+            showLibrary()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
