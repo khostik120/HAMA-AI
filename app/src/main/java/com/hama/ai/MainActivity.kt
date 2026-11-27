@@ -297,7 +297,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun editProject(item: JSONObject) {
         val fields = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL            setPadding(8, 4, 8, 0)        }
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 4, 8, 0)
+        }
         val nameField = EditText(this).apply {
             hint = "د پروژې نوم"
             setText(item.optString("name"))
@@ -596,7 +598,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         requestCancelled = false
         sendButton.isEnabled = true
         sendButton.text = "×"
-        waitingRow = addMessage("ځواب ترلاسه کوم...  ·  د بندولو لپاره × کېکاږئ", false, false)        Thread {
+        waitingRow = addMessage("ځواب ترلاسه کوم...  ·  د بندولو لپاره × کېکاږئ", false, false)
+        Thread {
             val answer = try {
                 val connection = URL(apiUrl).openConnection() as HttpURLConnection
                 activeConnection = connection
@@ -622,7 +625,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-                val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }                connection.disconnect()
+                val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                connection.disconnect()
                 activeConnection = null
                 val json = JSONObject(raw)
                 if (code !in 200..299) throw IllegalStateException(json.optString("error", "د سرور تېروتنه"))
@@ -895,7 +899,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "application/json"
-            }            startActivityForResult(pick, 605)
+            }
+            startActivityForResult(pick, 605)
         })
         root.addView(smallButton("د ځواب غږ ازموینه") {
             if (speechReady) speech.speak("سلام! زه HAMA AI یم.", TextToSpeech.QUEUE_FLUSH, null, "hama-test")
@@ -920,7 +925,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         baseScreen("ژبه", "د HAMA AI د ځوابونو ژبه وټاکئ")
         val current = TextView(this).apply {
             text = "اوسنۍ ژبه: $selectedLanguage"
-            textSize = 15f            setTextColor(Color.WHITE)
+            textSize = 15f
+            setTextColor(Color.WHITE)
             setPadding(4, 12, 4, 12)
         }
         root.addView(current)
