@@ -297,8 +297,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun editProject(item: JSONObject) {
         val fields = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(8, 4, 8, 0)
+            orientation = LinearLayout.VERTICAL            setPadding(8, 4, 8, 0)
         }
         val nameField = EditText(this).apply {
             hint = "د پروژې نوم"
@@ -406,27 +405,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             background = rounded(Color.rgb(10, 30, 58), 18f)
         })
 
-
-        scroll = ScrollView(this)
+        scroll = ScrollView(this).apply { clipToPadding = false }
         messages = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 8, 0, 12)
         }
         scroll.addView(messages)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        if (chatMessages.isEmpty()) {
-            // Keep the welcome hint on screen without saving it as a real chat message.
-            addMessage(welcomeMessage(), false, false)
-        } else {
-            chatMessages.forEach { item -> addMessage(item.optString("text"), item.optBoolean("user"), false) }
-        }
+        if (chatMessages.isEmpty()) addMessage(welcomeMessage(), false, false)
+        else chatMessages.forEach { item -> addMessage(item.optString("text"), item.optBoolean("user"), false) }
 
+        // Text input above a separate row of voice, attachment and send controls.
         val composer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(5, 7, 5, 5)
+            background = glossy(intArrayOf(Color.rgb(13, 25, 51), Color.rgb(5, 12, 29)), 25f, Color.rgb(42, 145, 230))
+            elevation = 20f * resources.displayMetrics.density
+        }
+        val inputPanel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(7, 3, 4, 3)
-            background = glossy(intArrayOf(Color.rgb(19, 30, 57), Color.rgb(8, 15, 32)), 26f, Color.rgb(42, 111, 190))
-            elevation = 18f * resources.displayMetrics.density
+            setPadding(9, 3, 9, 3)
+            background = glossy(intArrayOf(Color.rgb(27, 47, 83), Color.rgb(12, 23, 47)), 19f, Color.rgb(65, 157, 239))
         }
         input = EditText(this).apply {
             hint = "پیغام ولیکئ..."
@@ -434,52 +434,79 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setHintTextColor(muted)
             textSize = 16f
             background = null
-            setPadding(8, 12, 8, 12)
-            maxLines = 4
-            imeOptions = EditorInfo.IME_ACTION_SEND
+            setPadding(9, 10, 9, 10)
+            minLines = 1
+            maxLines = 6
+            isSingleLine = false
+            setHorizontallyScrolling(false)
+            gravity = Gravity.TOP or Gravity.START
+            imeOptions = EditorInfo.IME_ACTION_SEND or EditorInfo.IME_FLAG_NO_EXTRACT_UI
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
-            }        }
-        composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
-        val attach = TextView(this).apply {
-            text = "📎"
-            textSize = 19f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            setPadding(8, 10, 8, 10)
-            setOnClickListener {
-                val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "*/*"
-                }
-                startActivityForResult(pick, 603)
             }
         }
-        composer.addView(attach, LinearLayout.LayoutParams(42, 48))
-        val mic = TextView(this).apply {
-            text = "🎙"
-            textSize = 20f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            setPadding(12, 12, 12, 12)
-            setOnClickListener { startVoiceInput() }
+        inputPanel.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        composer.addView(inputPanel, LinearLayout.LayoutParams(-1, -2))
+
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(3, 6, 3, 1)
         }
-        composer.addView(mic, LinearLayout.LayoutParams(48, 48))
+        fun actionButton(symbol: String, description: String, action: () -> Unit): TextView =
+            TextView(this).apply {
+                text = symbol
+                contentDescription = description
+                textSize = 20f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+                background = glossy(intArrayOf(Color.rgb(38, 91, 158), Color.rgb(13, 34, 70)), 15f, Color.rgb(73, 169, 245))
+                elevation = 7f * resources.displayMetrics.density
+                setPadding(0, 0, 0, 0)
+                setOnClickListener { action() }
+            }
+
+        val attach = actionButton("＋", "فایل یا انځور ضمیمه کول") {
+            val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+            startActivityForResult(pick, 603)
+        }
+        actions.addView(attach, LinearLayout.LayoutParams(46, 44).apply { marginEnd = 7 })
+
+        val mic = actionButton("🎙", "غږ ثبتول او متن ته اړول") { startVoiceInput() }
+        actions.addView(mic, LinearLayout.LayoutParams(48, 44).apply { marginEnd = 7 })
+
+        val voiceReply = actionButton(if (speakReplies) "🔊" else "🔈", "د AI ځوابونه په غږ اورېدل") {
+            speakReplies = !speakReplies
+            prefs.edit().putBoolean("speak_replies", speakReplies).apply()
+            voiceReply.text = if (speakReplies) "🔊" else "🔈"
+        }
+        actions.addView(voiceReply, LinearLayout.LayoutParams(46, 44).apply { marginEnd = 7 })
+        actions.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+
         sendButton = Button(this).apply {
             text = "↑"
-            textSize = 21f
+            contentDescription = "پیغام لېږل"
+            textSize = 22f
             isAllCaps = false
             minWidth = 0
             minimumWidth = 0
             minHeight = 0
             minimumHeight = 0
             setTextColor(Color.WHITE)
-            background = rounded(accent, 24f)
+            background = glossy(intArrayOf(Color.rgb(28, 154, 255), Color.rgb(16, 75, 190)), 16f, Color.rgb(125, 218, 255))
+            elevation = 10f * resources.displayMetrics.density
             setPadding(0, 0, 0, 0)
             setOnClickListener { sendMessage() }
         }
-        composer.addView(sendButton, LinearLayout.LayoutParams(46, 46))
-        root.addView(composer)
+        actions.addView(sendButton, LinearLayout.LayoutParams(54, 46))
+        composer.addView(actions, LinearLayout.LayoutParams(-1, -2))
+        root.addView(composer, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = (7 * resources.displayMetrics.density).toInt()
+            bottomMargin = (4 * resources.displayMetrics.density).toInt()
+        })
         root.addView(bottomNav("chat"))
     }
 
@@ -597,8 +624,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-                val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                connection.disconnect()
+                val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }                connection.disconnect()
                 activeConnection = null
                 val json = JSONObject(raw)
                 if (code !in 200..299) throw IllegalStateException(json.optString("error", "د سرور تېروتنه"))
@@ -897,8 +923,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         baseScreen("ژبه", "د HAMA AI د ځوابونو ژبه وټاکئ")
         val current = TextView(this).apply {
             text = "اوسنۍ ژبه: $selectedLanguage"
-            textSize = 15f
-            setTextColor(Color.WHITE)
+            textSize = 15f            setTextColor(Color.WHITE)
             setPadding(4, 12, 4, 12)
         }
         root.addView(current)
