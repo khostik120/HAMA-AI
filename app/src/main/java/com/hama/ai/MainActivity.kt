@@ -122,21 +122,53 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showDrawer() {
-        val entries = arrayOf("＋  نوی چټ", "▤  تاریخچه", "▦  Library", "▣  Projects", "⚙  تنظیمات", "◉  پروفایل")
-        AlertDialog.Builder(this, android.app.AlertDialog.THEME_DEVICE_DEFAULT_DARK)
-            .setTitle("HAMA AI")
-            .setItems(entries) { _, which ->
-                when (which) {
-                    0 -> newChat()
-                    1 -> showHistory()
-                    2 -> showLibrary()
-                    3 -> showProjects()
-                    4 -> showSettings()
-                    5 -> showProfile()
-                }
+        val dialog = AlertDialog(this)
+        val panelView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(22, 22, 22, 18)
+            background = rounded(Color.rgb(29, 31, 36), 26f)
+        }
+        panelView.addView(TextView(this).apply {
+            text = "HAMA AI"
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            setPadding(4, 8, 4, 18)
+        })
+        val entries = listOf(
+            "＋     نوی چټ" to { newChat() },
+            "▤     تاریخچه" to { showHistory() },
+            "▦     Library" to { showLibrary() },
+            "▣     Projects" to { showProjects() },
+            "⚙     تنظیمات" to { showSettings() },
+            "◉     پروفایل" to { showProfile() }
+        )
+        entries.forEach { entry ->
+            val row = TextView(this).apply {
+                text = entry.first
+                textSize = 17f
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(12, 15, 12, 15)
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { dialog.dismiss(); entry.second() }
             }
-            .setNegativeButton("بندول", null)
-            .show()
+            panelView.addView(row, LinearLayout.LayoutParams(-1, -2))
+        }
+        val close = TextView(this).apply {
+            text = "بندول"
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(muted)
+            setPadding(10, 14, 10, 8)
+            setOnClickListener { dialog.dismiss() }
+        }
+        panelView.addView(close)
+        dialog.setView(panelView, 18, 12, 18, 12)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 
     private fun showLibrary() {
@@ -209,7 +241,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(7, 3, 4, 3)
-            setBackgroundColor(panel)
+            background = rounded(panel, 26f)
         }
         input = EditText(this).apply {
             hint = "پیغام ولیکئ..."
@@ -221,10 +253,29 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             maxLines = 4
         }
         composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
-        val mic = smallButton("🎙") { startVoiceInput() }
-        composer.addView(mic)
-        sendButton = smallButton("ولېږه") { sendMessage() }
-        composer.addView(sendButton)
+        val mic = TextView(this).apply {
+            text = "🎙"
+            textSize = 20f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setPadding(12, 12, 12, 12)
+            setOnClickListener { startVoiceInput() }
+        }
+        composer.addView(mic, LinearLayout.LayoutParams(48, 48))
+        sendButton = Button(this).apply {
+            text = "↑"
+            textSize = 21f
+            isAllCaps = false
+            minWidth = 0
+            minimumWidth = 0
+            minHeight = 0
+            minimumHeight = 0
+            setTextColor(Color.WHITE)
+            background = rounded(accent, 24f)
+            setPadding(0, 0, 0, 0)
+            setOnClickListener { sendMessage() }
+        }
+        composer.addView(sendButton, LinearLayout.LayoutParams(46, 46))
         root.addView(composer)
         root.addView(bottomNav("chat"))
     }
@@ -245,7 +296,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             textSize = 16f
             setTextColor(Color.WHITE)
             setPadding(15, 11, 15, 11)
-            setBackgroundColor(if (fromUser) accent else panel)
+            background = rounded(if (fromUser) accent else panel, 18f)
         }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
