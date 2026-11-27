@@ -195,7 +195,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         for (i in 0 until items.length()) {
             val item = items.optJSONObject(i) ?: continue
             val row = TextView(this).apply {
-                text = "📄  " + item.optString("name", "فایل") + "\\n" + item.optString("uri")
+                text = "📄  " + item.optString("name", "فایل") + "\n" + item.optString("uri")
                 textSize = 13f; setTextColor(Color.WHITE); setPadding(12, 14, 12, 14)
                 setOnClickListener {
                     try { startActivity(Intent(Intent.ACTION_VIEW).setData(android.net.Uri.parse(item.optString("uri"))).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
@@ -412,12 +412,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         val message = buildString {
             if (typedMessage.isNotEmpty()) append(typedMessage)
             if (!attachmentText.isNullOrBlank()) {
-                if (isNotEmpty()) append("\\n\\n")
+                if (isNotEmpty()) append("\n\n")
                 append("د ضمیمه شوي فایل نوم: ").append(attachmentName ?: "فایل")
-                append("\\nد فایل متن:\\n").append(attachmentText)
+                append("\nد فایل متن:\n").append(attachmentText)
             }
         }
-        addMessage(if (attachmentName != null) (if (typedMessage.isNotEmpty()) "$typedMessage\\n📎 $attachmentName" else "📎 $attachmentName") else message, true, true)
+        addMessage(if (attachmentName != null) (if (typedMessage.isNotEmpty()) "$typedMessage\n📎 $attachmentName" else "📎 $attachmentName") else message, true, true)
         pendingAttachmentText = null
         pendingAttachmentName = null
         input.text.clear()
