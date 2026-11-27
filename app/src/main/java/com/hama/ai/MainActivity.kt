@@ -596,11 +596,19 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     background = rounded(panel, 14f)
                     setOnClickListener { openChat(item) }
                     setOnLongClickListener {
-                        AlertDialog.Builder(this@MainActivity).setMessage("دا چټ حذف شي؟")
-                            .setNegativeButton("نه", null).setPositiveButton("هو") { _, _ ->
-                                list.remove(i)
-                                prefs.edit().putString("chats", list.toString()).apply()
-                                renderHistory(search.text.toString())
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle(title)
+                            .setItems(arrayOf("د چټ نوم بدلول", "چټ شریکول", "چټ حذفول")) { _, choice ->
+                                when (choice) {
+                                    0 -> renameChat(item) { renderHistory(search.text.toString()) }
+                                    1 -> shareChat(item)
+                                    2 -> AlertDialog.Builder(this@MainActivity).setMessage("دا چټ حذف شي؟")
+                                        .setNegativeButton("نه", null).setPositiveButton("هو") { _, _ ->
+                                            list.remove(i)
+                                            prefs.edit().putString("chats", list.toString()).apply()
+                                            renderHistory(search.text.toString())
+                                        }.show()
+                                }
                             }.show()
                         true
                     }
@@ -626,6 +634,56 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         renderHistory("")
         root.addView(smallButton("＋ نوی چټ") { newChat() })
         root.addView(bottomNav("history"))
+    }
+
+    private fun renameChat(item: JSONObject, onSaved: () -> Unit) {
+        val field = EditText(this).apply {
+            setText(item.optString("title", "نوی چټ"))
+            setSelection(text.length)
+            hint = "د چټ نوی نوم"
+        }
+        AlertDialog.Builder(this).setTitle("د چټ نوم بدلول").setView(field)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("ساتل") { _, _ ->
+                val title = field.text.toString().trim()
+                if (title.isBlank()) {
+                    Toast.makeText(this, "نوم تش نه شي پاتې کېدای.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val all = loadChats()
+                for (i in 0 until all.length()) {
+                    val saved = all.optJSONObject(i) ?: continue
+                    if (saved.optString("id") == item.optString("id")) {
+                        saved.put("title", title)
+                        break
+                    }
+                }
+                item.put("title", title)
+                prefs.edit().putString("chats", all.toString()).apply()
+                onSaved()
+                Toast.makeText(this, "د چټ نوم بدل شو.", Toast.LENGTH_SHORT).show()
+            }.show()
+    }
+
+    private fun shareChat(item: JSONObject) {
+        val entries = item.optJSONArray("messages") ?: JSONArray()
+        val transcript = buildString {
+            append(item.optString("title", "HAMA AI چټ")).append("\\n")
+            append(item.optString("date", "")).append("\\n\\n")
+            for (i in 0 until entries.length()) {
+                val message = entries.optJSONObject(i) ?: continue
+                append(if (message.optBoolean("user")) "تاسو" else "HAMA AI")
+                append(":\\n")
+                append(message.optString("text"))
+                append("\\n\\n")
+            }
+        }
+        val share = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, item.optString("title", "HAMA AI chat"))
+            putExtra(Intent.EXTRA_TEXT, transcript)
+        }
+        startActivity(Intent.createChooser(share, "چټ شریکول"))
     }
 
     private fun openChat(item: JSONObject) {
@@ -730,9 +788,17 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun saveCurrentChat() {
         if (chatMessages.isEmpty()) return
         val all = loadChats()
+        var existingTitle: String? = null
+        for (i in 0 until all.length()) {
+            val existing = all.optJSONObject(i) ?: continue
+            if (existing.optString("id") == currentChatId) {
+                existingTitle = existing.optString("title").takeIf { it.isNotBlank() }
+                break
+            }
+        }
         val item = JSONObject()
             .put("id", currentChatId)
-            .put("title", chatMessages.firstOrNull()?.optString("text")?.take(36) ?: "نوی چټ")
+            .put("title", existingTitle ?: chatMessages.firstOrNull()?.optString("text")?.take(36) ?: "نوی چټ")
             .put("date", java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date()))
             .put("language", selectedLanguage)
             .put("messages", JSONArray(chatMessages))
