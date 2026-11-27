@@ -197,8 +197,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "*/*"
-            }
-            startActivityForResult(pick, 602)
+            }            startActivityForResult(pick, 602)
         })
         val items = libraryItems
         if (items.length() == 0) root.addView(TextView(this).apply {
@@ -354,6 +353,47 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         startActivity(Intent.createChooser(intent, "پروژه شریکول"))
     }
 
+    private fun welcomeMessage(): String = when (selectedLanguage) {
+        "پښتو" -> "سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟"
+        "دري", "فارسی" -> "سلام! من HAMA AI هستم. چطور می‌توانم کمک کنم؟"
+        "English" -> "Hello! I'm HAMA AI. How can I help you today?"
+        "العربية" -> "مرحباً! أنا HAMA AI. كيف يمكنني مساعدتك؟"
+        "اردو" -> "السلام علیکم! میں HAMA AI ہوں۔ میں آپ کی کیا مدد کر سکتا ہوں؟"
+        "हिन्दी" -> "नमस्ते! मैं HAMA AI हूँ। मैं आपकी कैसे मदद कर सकता हूँ?"
+        "বাংলা" -> "হ্যালো! আমি HAMA AI। কীভাবে সাহায্য করতে পারি?"
+        "中文" -> "你好！我是 HAMA AI。有什么可以帮你？"
+        "日本語" -> "こんにちは！HAMA AIです。どのようにお手伝いできますか？"
+        "한국어" -> "안녕하세요! 저는 HAMA AI입니다. 무엇을 도와드릴까요?"
+        "Türkçe" -> "Merhaba! Ben HAMA AI. Size nasıl yardımcı olabilirim?"
+        "Русский" -> "Здравствуйте! Я HAMA AI. Чем могу помочь?"
+        "Français" -> "Bonjour ! Je suis HAMA AI. Comment puis-je vous aider ?"
+        "Deutsch" -> "Hallo! Ich bin HAMA AI. Wie kann ich Ihnen helfen?"
+        "Español" -> "¡Hola! Soy HAMA AI. ¿Cómo puedo ayudarte?"
+        "Bahasa Indonesia" -> "Halo! Saya HAMA AI. Ada yang bisa saya bantu?"
+        "Bahasa Melayu" -> "Helo! Saya HAMA AI. Apa yang boleh saya bantu?"
+        "Italiano" -> "Ciao! Sono HAMA AI. Come posso aiutarti?"
+        "Português" -> "Olá! Sou HAMA AI. Como posso ajudar?"
+        "Nederlands" -> "Hallo! Ik ben HAMA AI. Hoe kan ik je helpen?"
+        "Polski" -> "Cześć! Jestem HAMA AI. W czym mogę pomóc?"
+        "Українська" -> "Вітаю! Я HAMA AI. Чим можу допомогти?"
+        "Ελληνικά" -> "Γεια σας! Είμαι το HAMA AI. Πώς μπορώ να βοηθήσω;"
+        "עברית" -> "שלום! אני HAMA AI. איך אפשר לעזור?"
+        "Svenska" -> "Hej! Jag är HAMA AI. Hur kan jag hjälpa dig?"
+        "Norsk" -> "Hei! Jeg er HAMA AI. Hva kan jeg hjelpe deg med?"
+        "Dansk" -> "Hej! Jeg er HAMA AI. Hvordan kan jeg hjælpe?"
+        "Suomi" -> "Hei! Olen HAMA AI. Miten voin auttaa?"
+        "Čeština" -> "Ahoj! Jsem HAMA AI. Jak vám mohu pomoci?"
+        "Română" -> "Salut! Sunt HAMA AI. Cu ce te pot ajuta?"
+        "Magyar" -> "Szia! HAMA AI vagyok. Miben segíthetek?"
+        "Български" -> "Здравейте! Аз съм HAMA AI. С какво мога да помогна?"
+        "Kiswahili" -> "Habari! Mimi ni HAMA AI. Ninawezaje kukusaidia?"
+        "ไทย" -> "สวัสดี! ฉันคือ HAMA AI มีอะไรให้ช่วยไหม?"
+        "Tiếng Việt" -> "Xin chào! Tôi là HAMA AI. Tôi có thể giúp gì cho bạn?"
+        "नेपाली" -> "नमस्ते! म HAMA AI हुँ। म तपाईंलाई कसरी मद्दत गर्न सक्छु?"
+        "O‘zbekcha" -> "Salom! Men HAMA AI. Sizga qanday yordam bera olaman?"
+        else -> "سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟"
+    }
+
     private fun showChat() {
         baseScreen("HAMA AI", "ستاسو څو ژبی هوښیار مرستیال")
         root.addView(TextView(this).apply {
@@ -374,7 +414,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         scroll.addView(messages)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         if (chatMessages.isEmpty()) {
-            addMessage("سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟", false, true)
+            // Keep the welcome hint on screen without saving it as a real chat message.
+            addMessage(welcomeMessage(), false, false)
         } else {
             chatMessages.forEach { item -> addMessage(item.optString("text"), item.optBoolean("user"), false) }
         }
@@ -397,8 +438,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             imeOptions = EditorInfo.IME_ACTION_SEND
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEND) { sendMessage(); true } else false
-            }
-        }
+            }        }
         composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
         val attach = TextView(this).apply {
             text = "📎"
@@ -597,8 +637,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         recognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) { Toast.makeText(this@MainActivity, "خبرې وکړئ...", Toast.LENGTH_SHORT).show() }
-            override fun onResults(results: Bundle?) {
-                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+            override fun onResults(results: Bundle?) {                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                 if (!words.isNullOrBlank()) input.setText(words)
                 recognizer?.destroy()
                 recognizer = null
@@ -797,8 +836,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         baseScreen("پروفایل", "ستاسو د HAMA AI حساب")
         val name = prefs.getString("profile_name", "HAMA AI کاروونکی") ?: "HAMA AI کاروونکی"
         root.addView(TextView(this).apply {
-            text = "👤\n$name\n\nدا پروفایل په همدې موبایل کې ساتل کېږي."
-            textSize = 18f
+            text = "👤\n$name\n\nدا پروفایل په همدې موبایل کې ساتل کېږي."            textSize = 18f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             setPadding(15, 25, 15, 25)
@@ -998,77 +1036,3 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 }
                 if (backup.has("speakReplies")) {
                     speakReplies = backup.optBoolean("speakReplies")
-                    editor.putBoolean("speak_replies", speakReplies)
-                }
-                if (backup.has("profileName")) editor.putString("profile_name", backup.optString("profileName"))
-                editor.apply()
-                Toast.makeText(this, "$added خبرې او $libraryAdded فایلونه وارد شول. د پروژو او تنظیماتو معلومات هم یوځای شول.", Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, e.message ?: "بیک اپ وارد نه شو.", Toast.LENGTH_LONG).show()
-            }
-            return
-        }
-        if (requestCode == 603 && resultCode == RESULT_OK) {
-            val uri = data?.data ?: return
-            try {
-                val mime = contentResolver.getType(uri) ?: ""
-                if (!(mime.startsWith("text/") || mime.contains("json") || mime.contains("xml") || mime.contains("javascript"))) {
-                    Toast.makeText(this, "اوس یوازې د متن، JSON، XML او کوډ فایلونه ملاتړ کېږي.", Toast.LENGTH_LONG).show()
-                    return
-                }
-                val name = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "متن فایل"
-                } ?: "متن فایل"
-                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { reader ->
-                    val output = StringBuilder()
-                    val buffer = CharArray(4096)
-                    while (true) {
-                        val remaining = 60001 - output.length
-                        if (remaining <= 0) break
-                        val count = reader.read(buffer, 0, minOf(buffer.size, remaining))
-                        if (count < 0) break
-                        output.append(buffer, 0, count)
-                    }
-                    output.toString()
-                } ?: throw IllegalStateException("فایل نه لوستل کېږي")
-                if (text.length > 60000) throw IllegalArgumentException("فایل ډېر لوی دی؛ تر ۶۰ زره تورو کوچنی فایل وټاکئ.")
-                pendingAttachmentText = text
-                pendingAttachmentName = name
-                Toast.makeText(this, "ضمیمه شوه: $name — اوس خپل سوال ولیکئ او واستوئ.", Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, e.message ?: "فایل لوستل کېدای نه شي.", Toast.LENGTH_LONG).show()
-            }
-            return
-        }
-        if (requestCode == 602 && resultCode == RESULT_OK) {
-            val uri = data?.data ?: return
-            try {
-                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: Exception) {}
-            val name = try {
-                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "فایل"
-                } ?: "فایل"
-            } catch (_: Exception) { "فایل" }
-            val all = libraryItems
-            all.put(JSONObject().put("name", name).put("uri", uri.toString()))
-            prefs.edit().putString("library_items", all.toString()).apply()
-            Toast.makeText(this, "فایل Library ته اضافه شو.", Toast.LENGTH_SHORT).show()
-            showLibrary()
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 501 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) startVoiceInput()
-        else if (requestCode == 501) Toast.makeText(this, "د غږ لپاره اجازه اړینه ده.", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onDestroy() {
-        recognizer?.destroy()
-        if (::speech.isInitialized) speech.shutdown()
-        super.onDestroy()
-    }
-}
