@@ -440,6 +440,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val answer = try {
                 val connection = URL(apiUrl).openConnection() as HttpURLConnection
                 activeConnection = connection
+                if (requestCancelled) {
+                    connection.disconnect()
+                    throw java.io.InterruptedIOException("غوښتنه بنده شوه")
+                }
                 connection.requestMethod = "POST"
                 connection.connectTimeout = 20000
                 connection.readTimeout = 90000
