@@ -76,6 +76,94 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         if (speechReady) speech.language = Locale.getDefault()
     }
 
+
+    // Central UI translations for the four primary app languages.
+    private fun tr(key: String): String {
+        val lang = selectedLanguage
+        val en = mapOf(
+            "tagline" to "Your multilingual intelligent assistant",
+            "online" to "✦  HAMA AI  •  Online multilingual AI",
+            "placeholder" to "Type a message...",
+            "attach" to "Attach file or image",
+            "record" to "Record voice and convert to text",
+            "listen" to "Listen to AI replies aloud",
+            "send" to "Send",
+            "chat" to "Chat", "history" to "History", "profile" to "Profile", "settings" to "Settings",
+            "new_chat" to "New chat", "library" to "Library", "projects" to "Projects", "close" to "Close",
+            "settings_sub" to "HAMA AI preferences", "reply_language" to "Reply language",
+            "language" to "Language", "current_language" to "Current language",
+            "choose_language" to "Choose the HAMA AI interface language",
+            "back_settings" to "✓  Back to settings",
+            "voice_auto_on" to "Automatic reply voice: On", "voice_auto_off" to "Automatic reply voice: Off",
+            "backup_export" to "💾 Export backup", "backup_import" to "📂 Import backup",
+            "voice_test" to "Test voice", "delete_all" to "Delete all chats",
+            "app_version" to "Version 1.4\nHAMA AI — multilingual assistant"
+        )
+        val fa = mapOf(
+            "tagline" to "دستیار هوشمند چندزبانه شما",
+            "online" to "✦  HAMA AI  •  هوش مصنوعی آنلاین چندزبانه",
+            "placeholder" to "پیام خود را بنویسید...",
+            "attach" to "پیوست فایل یا تصویر", "record" to "ضبط صدا و تبدیل به متن",
+            "listen" to "شنیدن پاسخ‌های هوش مصنوعی", "send" to "ارسال",
+            "chat" to "گفتگو", "history" to "تاریخچه", "profile" to "پروفایل", "settings" to "تنظیمات",
+            "new_chat" to "گفتگوی جدید", "library" to "کتابخانه", "projects" to "پروژه‌ها", "close" to "بستن",
+            "settings_sub" to "تنظیمات HAMA AI", "reply_language" to "زبان پاسخ",
+            "language" to "زبان", "current_language" to "زبان فعلی",
+            "choose_language" to "زبان رابط HAMA AI را انتخاب کنید",
+            "back_settings" to "✓  بازگشت به تنظیمات",
+            "voice_auto_on" to "صدای خودکار پاسخ: روشن", "voice_auto_off" to "صدای خودکار پاسخ: خاموش",
+            "backup_export" to "💾 خروجی پشتیبان", "backup_import" to "📂 وارد کردن پشتیبان",
+            "voice_test" to "آزمایش صدا", "delete_all" to "حذف همه گفتگوها",
+            "app_version" to "نسخه ۱.۴\nHAMA AI — دستیار هوشمند چندزبانه"
+        )
+        val ur = mapOf(
+            "tagline" to "آپ کا کثیر لسانی ذہین معاون",
+            "online" to "✦  HAMA AI  •  آن لائن کثیر لسانی AI",
+            "placeholder" to "پیغام لکھیں...",
+            "attach" to "فائل یا تصویر منسلک کریں", "record" to "آواز ریکارڈ کرکے متن بنائیں",
+            "listen" to "AI کا جواب آواز میں سنیں", "send" to "بھیجیں",
+            "chat" to "چیٹ", "history" to "تاریخ", "profile" to "پروفائل", "settings" to "ترتیبات",
+            "new_chat" to "نئی چیٹ", "library" to "لائبریری", "projects" to "منصوبے", "close" to "بند کریں",
+            "settings_sub" to "HAMA AI کی ترتیبات", "reply_language" to "جواب کی زبان",
+            "language" to "زبان", "current_language" to "موجودہ زبان",
+            "choose_language" to "HAMA AI کی زبان منتخب کریں",
+            "back_settings" to "✓  ترتیبات پر واپس",
+            "voice_auto_on" to "جواب خودکار آواز: آن", "voice_auto_off" to "جواب خودکار آواز: آف",
+            "backup_export" to "💾 بیک اپ برآمد کریں", "backup_import" to "📂 بیک اپ درآمد کریں",
+            "voice_test" to "آواز آزمائیں", "delete_all" to "تمام چیٹس حذف کریں",
+            "app_version" to "ورژن 1.4\nHAMA AI — کثیر لسانی ذہین معاون"
+        )
+        val ps = mapOf(
+            "tagline" to "ستاسو څو ژبی هوښیار مرستیال",
+            "online" to "✦  HAMA AI  •  آنلاین څو ژبی AI",
+            "placeholder" to "پیغام ولیکئ...",
+            "attach" to "فایل یا انځور ضمیمه کول", "record" to "غږ ثبتول او متن ته اړول",
+            "listen" to "د AI ځوابونه په غږ اورېدل", "send" to "ولېږه",
+            "chat" to "چټ", "history" to "تاریخچه", "profile" to "پروفایل", "settings" to "تنظیمات",
+            "new_chat" to "نوی چټ", "library" to "کتابتون", "projects" to "پروژې", "close" to "بندول",
+            "settings_sub" to "د HAMA AI شخصي تنظیمات", "reply_language" to "د ځواب ژبه",
+            "language" to "ژبه", "current_language" to "اوسنۍ ژبه",
+            "choose_language" to "د HAMA AI د اپلیکیشن ژبه وټاکئ",
+            "back_settings" to "✓  بېرته تنظیماتو ته",
+            "voice_auto_on" to "د ځوابونو اتومات غږ: فعال", "voice_auto_off" to "د ځوابونو اتومات غږ: بند",
+            "backup_export" to "💾 د معلوماتو بیک اپ صادرول", "backup_import" to "📂 د بیک اپ واردول",
+            "voice_test" to "د ځواب غږ ازموینه", "delete_all" to "ټولې خبرې حذفول",
+            "app_version" to "نسخه 1.4\nHAMA AI — څو ژبی هوښیار مرستیال"
+        )
+        val map = when (lang) {
+            "English" -> en
+            "دري", "فارسی" -> fa
+            "اردو" -> ur
+            else -> ps
+        }
+        return map[key] ?: key
+    }
+
+    private fun applyLanguageDirection() {
+        val rtl = selectedLanguage in listOf("پښتو", "دري", "فارسی", "اردو", "العربية", "עברית")
+        root.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+    }
+
     private fun rounded(color: Int, radius: Float = 22f): android.graphics.drawable.GradientDrawable =
         android.graphics.drawable.GradientDrawable().apply {
             setColor(color)
@@ -144,6 +232,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         header.addView(newChat)
         root.addView(header)
         setContentView(root)
+        applyLanguageDirection()
     }
 
     private fun showDrawer() {
@@ -401,9 +490,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showChat() {
-        baseScreen("HAMA AI", "ستاسو څو ژبی هوښیار مرستیال")
+        baseScreen("HAMA AI", tr("tagline"))
         root.addView(TextView(this).apply {
-            text = "✦  HAMA AI  •  آنلاین څو ژبی AI"
+            text = tr("online")
             textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.rgb(80, 226, 255))
@@ -435,7 +524,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             background = glossy(intArrayOf(Color.rgb(27, 47, 83), Color.rgb(12, 23, 47)), 19f, Color.rgb(65, 157, 239))
         }
         input = EditText(this).apply {
-            hint = "پیغام ولیکئ..."
+            hint = tr("placeholder")
             setTextColor(Color.WHITE)
             setHintTextColor(muted)
             textSize = 16f
@@ -477,7 +566,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 setOnClickListener { action() }
             }
 
-        val attach = actionButton("＋", "فایل یا انځور ضمیمه کول") {
+        val attach = actionButton("＋", tr("attach")) {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "*/*"
@@ -486,10 +575,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
         actions.addView(attach, LinearLayout.LayoutParams(46, 44).apply { marginEnd = 7 })
 
-        val mic = actionButton("🎙", "غږ ثبتول او متن ته اړول") { startVoiceInput() }
+        val mic = actionButton("🎙", tr("record")) { startVoiceInput() }
         actions.addView(mic, LinearLayout.LayoutParams(48, 44).apply { marginEnd = 7 })
 
-        val voiceReply = actionButton(if (speakReplies) "🔊" else "🔈", "د AI ځوابونه په غږ اورېدل") {
+        val voiceReply = actionButton(if (speakReplies) "🔊" else "🔈", tr("listen")) {
             speakReplies = !speakReplies
             prefs.edit().putBoolean("speak_replies", speakReplies).apply()
             (actions.getChildAt(2) as TextView).text = if (speakReplies) "🔊" else "🔈"
@@ -499,7 +588,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
         sendButton = Button(this).apply {
             text = "↑"
-            contentDescription = "پیغام لېږل"
+            contentDescription = tr("send")
             textSize = 22f
             isAllCaps = false
             minWidth = 0
@@ -728,8 +817,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             gravity = Gravity.CENTER
             setPadding(0, 8, 0, 2)
         }
-        listOf(Triple("چټ", "chat") { showChat() }, Triple("تاریخچه", "history") { showHistory() },
-            Triple("پروفایل", "profile") { showProfile() }, Triple("تنظیمات", "settings") { showSettings() })
+        listOf(Triple(tr("chat"), "chat") { showChat() }, Triple(tr("history"), "history") { showHistory() },
+            Triple(tr("profile"), "profile") { showProfile() }, Triple(tr("settings"), "settings") { showSettings() })
             .forEach { item ->
                 val b = TextView(this).apply {
                     text = item.first
@@ -913,38 +1002,38 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showSettings() {
-        baseScreen("تنظیمات", "د HAMA AI شخصي تنظیمات")
+        baseScreen(tr("settings"), tr("settings_sub"))
         root.addView(TextView(this).apply {
-            text = "د ځواب ژبه"
+            text = tr("reply_language")
             textSize = 15f
             setTextColor(Color.WHITE)
         })
-        root.addView(smallButton("🌐  ژبه: $selectedLanguage") { showLanguageSettings() })
-        root.addView(smallButton(if (speakReplies) "د ځوابونو اتومات غږ: فعال" else "د ځوابونو اتومات غږ: بند") {
+        root.addView(smallButton("🌐  ${tr("language")}: $selectedLanguage") { showLanguageSettings() })
+        root.addView(smallButton(if (speakReplies) tr("voice_auto_on") else tr("voice_auto_off")) {
             speakReplies = !speakReplies
             prefs.edit().putBoolean("speak_replies", speakReplies).apply()
             showSettings()
         })
-        root.addView(smallButton("💾 د معلوماتو بیک اپ صادرول") { createBackup() })
-        root.addView(smallButton("📂 د بیک اپ واردول") {
+        root.addView(smallButton(tr("backup_export")) { createBackup() })
+        root.addView(smallButton(tr("backup_import")) {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "application/json"
             }
             startActivityForResult(pick, 605)
         })
-        root.addView(smallButton("د ځواب غږ ازموینه") {
+        root.addView(smallButton(tr("voice_test")) {
             if (speechReady) speech.speak("سلام! زه HAMA AI یم.", TextToSpeech.QUEUE_FLUSH, null, "hama-test")
             else Toast.makeText(this, "غږیز سیستم چمتو نه دی.", Toast.LENGTH_SHORT).show()
         })
-        root.addView(smallButton("ټولې خبرې حذفول") {
+        root.addView(smallButton(tr("delete_all")) {
             AlertDialog.Builder(this).setMessage("ایا د خبرو ټوله تاریخچه حذف کړئ؟")
                 .setNegativeButton("لغوه", null).setPositiveButton("حذف") { _, _ ->
                     prefs.edit().remove("chats").apply(); chatMessages.clear(); showHistory()
                 }.show()
         })
         root.addView(TextView(this).apply {
-            text = "نسخه 1.3\nHAMA AI — څو ژبی هوښیار مرستیال"
+            text = tr("app_version")
             textSize = 12f
             setTextColor(muted)
             setPadding(0, 20, 0, 10)
@@ -953,9 +1042,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showLanguageSettings() {
-        baseScreen("ژبه", "د HAMA AI د ځوابونو ژبه وټاکئ")
+        baseScreen(tr("language"), tr("choose_language"))
         val current = TextView(this).apply {
-            text = "اوسنۍ ژبه: $selectedLanguage"
+            text = "${tr("current_language")}: $selectedLanguage"
             textSize = 15f
             setTextColor(Color.WHITE)
             setPadding(4, 12, 4, 12)
@@ -971,12 +1060,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     selectedLanguage = languages[position]
                     prefs.edit().putString("selected_language", selectedLanguage).apply()
-                    current.text = "اوسنۍ ژبه: $selectedLanguage"
+                    current.text = "${tr("current_language")}: $selectedLanguage"
+                    root.post { showSettings() }
                 }
             }
         }
         root.addView(picker, LinearLayout.LayoutParams(-1, -2))
-        root.addView(smallButton("✓  بېرته تنظیماتو ته") { showSettings() })
+        root.addView(smallButton(tr("back_settings")) { showSettings() })
         root.addView(bottomNav("settings"))
     }
 
