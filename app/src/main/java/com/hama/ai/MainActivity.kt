@@ -197,7 +197,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "*/*"
-            }            startActivityForResult(pick, 602)
+            }
+            startActivityForResult(pick, 602)
         })
         val items = libraryItems
         if (items.length() == 0) root.addView(TextView(this).apply {
@@ -836,7 +837,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         baseScreen("پروفایل", "ستاسو د HAMA AI حساب")
         val name = prefs.getString("profile_name", "HAMA AI کاروونکی") ?: "HAMA AI کاروونکی"
         root.addView(TextView(this).apply {
-            text = "👤\n$name\n\nدا پروفایل په همدې موبایل کې ساتل کېږي."            textSize = 18f
+            text = "👤\n$name\n\nدا پروفایل په همدې موبایل کې ساتل کېږي."
+            textSize = 18f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             setPadding(15, 25, 15, 25)
@@ -1036,3 +1038,77 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 }
                 if (backup.has("speakReplies")) {
                     speakReplies = backup.optBoolean("speakReplies")
+                    editor.putBoolean("speak_replies", speakReplies)
+                }
+                if (backup.has("profileName")) editor.putString("profile_name", backup.optString("profileName"))
+                editor.apply()
+                Toast.makeText(this, "$added خبرې او $libraryAdded فایلونه وارد شول. د پروژو او تنظیماتو معلومات هم یوځای شول.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "بیک اپ وارد نه شو.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        if (requestCode == 603 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                val mime = contentResolver.getType(uri) ?: ""
+                if (!(mime.startsWith("text/") || mime.contains("json") || mime.contains("xml") || mime.contains("javascript"))) {
+                    Toast.makeText(this, "اوس یوازې د متن، JSON، XML او کوډ فایلونه ملاتړ کېږي.", Toast.LENGTH_LONG).show()
+                    return
+                }
+                val name = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "متن فایل"
+                } ?: "متن فایل"
+                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                    val output = StringBuilder()
+                    val buffer = CharArray(4096)
+                    while (true) {
+                        val remaining = 60001 - output.length
+                        if (remaining <= 0) break
+                        val count = reader.read(buffer, 0, minOf(buffer.size, remaining))
+                        if (count < 0) break
+                        output.append(buffer, 0, count)
+                    }
+                    output.toString()
+                } ?: throw IllegalStateException("فایل نه لوستل کېږي")
+                if (text.length > 60000) throw IllegalArgumentException("فایل ډېر لوی دی؛ تر ۶۰ زره تورو کوچنی فایل وټاکئ.")
+                pendingAttachmentText = text
+                pendingAttachmentName = name
+                Toast.makeText(this, "ضمیمه شوه: $name — اوس خپل سوال ولیکئ او واستوئ.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "فایل لوستل کېدای نه شي.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        if (requestCode == 602 && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+            val name = try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "فایل"
+                } ?: "فایل"
+            } catch (_: Exception) { "فایل" }
+            val all = libraryItems
+            all.put(JSONObject().put("name", name).put("uri", uri.toString()))
+            prefs.edit().putString("library_items", all.toString()).apply()
+            Toast.makeText(this, "فایل Library ته اضافه شو.", Toast.LENGTH_SHORT).show()
+            showLibrary()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 501 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) startVoiceInput()
+        else if (requestCode == 501) Toast.makeText(this, "د غږ لپاره اجازه اړینه ده.", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroy() {
+        recognizer?.destroy()
+        if (::speech.isInitialized) speech.shutdown()
+        super.onDestroy()
+    }
+}
