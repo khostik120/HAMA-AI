@@ -133,7 +133,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun showDrawer() {
-        val dialog = AlertDialog(this)
+        val dialog = AlertDialog.Builder(this).create()
         val panelView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(22, 22, 22, 18)
@@ -650,7 +650,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setTextColor(Color.WHITE)
             setHintTextColor(muted)
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             background = rounded(panel, 16f)
             setPadding(14, 12, 14, 12)
         }
