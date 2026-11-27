@@ -39,7 +39,6 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var scroll: ScrollView
     private lateinit var input: EditText
     private lateinit var sendButton: Button
-    private lateinit var languagePicker: Spinner
     private lateinit var speech: TextToSpeech
     private var speechReady = false
     private var speakReplies = false
@@ -365,20 +364,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(10, 7, 10, 10)
             background = rounded(Color.rgb(10, 30, 58), 18f)
         })
-        languagePicker = Spinner(this).apply {
-            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, languages).also {
-                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            setSelection(languages.indexOf(selectedLanguage).coerceAtLeast(0))
-            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    selectedLanguage = languages[position]
-                    prefs.edit().putString("selected_language", selectedLanguage).apply()
-                }
-            }
-        }
-        root.addView(languagePicker, LinearLayout.LayoutParams(-1, -2))
+
 
         scroll = ScrollView(this)
         messages = LinearLayout(this).apply {
@@ -388,7 +374,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         scroll.addView(messages)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         if (chatMessages.isEmpty()) {
-            addMessage("سلام! زه HAMA AI یم. خپله ژبه وټاکئ یا Auto-detect پرېږدئ.", false, true)
+            addMessage("سلام! زه HAMA AI یم. څنګه مرسته درسره وکړم؟", false, true)
         } else {
             chatMessages.forEach { item -> addMessage(item.optString("text"), item.optBoolean("user"), false) }
         }
@@ -834,20 +820,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             textSize = 15f
             setTextColor(Color.WHITE)
         })
-        val picker = Spinner(this).apply {
-            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, languages).also {
-                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            setSelection(languages.indexOf(selectedLanguage).coerceAtLeast(0))
-            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    selectedLanguage = languages[position]
-                    prefs.edit().putString("selected_language", selectedLanguage).apply()
-                }
-            }
-        }
-        root.addView(picker)
+        root.addView(smallButton("🌐  ژبه: $selectedLanguage") { showLanguageSettings() })
         root.addView(smallButton(if (speakReplies) "د ځوابونو اتومات غږ: فعال" else "د ځوابونو اتومات غږ: بند") {
             speakReplies = !speakReplies
             prefs.edit().putBoolean("speak_replies", speakReplies).apply()
@@ -877,6 +850,34 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setTextColor(muted)
             setPadding(0, 20, 0, 10)
         })
+        root.addView(bottomNav("settings"))
+    }
+
+    private fun showLanguageSettings() {
+        baseScreen("ژبه", "د HAMA AI د ځوابونو ژبه وټاکئ")
+        val current = TextView(this).apply {
+            text = "اوسنۍ ژبه: $selectedLanguage"
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            setPadding(4, 12, 4, 12)
+        }
+        root.addView(current)
+        val picker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, languages).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(languages.indexOf(selectedLanguage).coerceAtLeast(0))
+            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    selectedLanguage = languages[position]
+                    prefs.edit().putString("selected_language", selectedLanguage).apply()
+                    current.text = "اوسنۍ ژبه: $selectedLanguage"
+                }
+            }
+        }
+        root.addView(picker, LinearLayout.LayoutParams(-1, -2))
+        root.addView(smallButton("✓  بېرته تنظیماتو ته") { showSettings() })
         root.addView(bottomNav("settings"))
     }
 
