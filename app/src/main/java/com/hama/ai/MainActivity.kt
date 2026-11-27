@@ -220,17 +220,33 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun showProjects() {
         baseScreen("Projects", "خپل کارونه منظم کړئ")
         root.addView(smallButton("＋ نوې پروژه") {
-            val field = EditText(this).apply { hint = "د پروژې نوم" }
-            AlertDialog.Builder(this).setTitle("نوې پروژه").setView(field)
+            val fields = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(8, 4, 8, 0)
+            }
+            val nameField = EditText(this).apply { hint = "د پروژې نوم" }
+            val descriptionField = EditText(this).apply {
+                hint = "د پروژې تشریح (اختیاري)"
+                minLines = 2
+                gravity = Gravity.TOP
+            }
+            fields.addView(nameField)
+            fields.addView(descriptionField)
+            AlertDialog.Builder(this).setTitle("نوې پروژه").setView(fields)
                 .setNegativeButton("لغوه", null)
                 .setPositiveButton("جوړول") { _, _ ->
-                    val name = field.text.toString().trim()
+                    val name = nameField.text.toString().trim()
                     if (name.isNotEmpty()) {
                         val all = projectItems
-                        all.put(JSONObject().put("name", name).put("created", System.currentTimeMillis()))
+                        all.put(JSONObject()
+                            .put("id", java.util.UUID.randomUUID().toString())
+                            .put("name", name)
+                            .put("description", descriptionField.text.toString().trim())
+                            .put("created", System.currentTimeMillis())
+                            .put("updated", System.currentTimeMillis()))
                         prefs.edit().putString("project_items", all.toString()).apply()
                         showProjects()
-                    }
+                    } else Toast.makeText(this, "د پروژې نوم ولیکئ.", Toast.LENGTH_SHORT).show()
                 }.show()
         })
         val all = projectItems
@@ -241,19 +257,92 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         for (i in 0 until all.length()) {
             val item = all.optJSONObject(i) ?: continue
             val row = TextView(this).apply {
-                text = "▣  " + item.optString("name")
-                textSize = 16f; setTextColor(Color.WHITE); setPadding(14, 16, 14, 16)
+                val description = item.optString("description")
+                text = "▣  " + item.optString("name") +
+                    (if (description.isNotBlank()) "\\n$description" else "") +
+                    "\\n" + if (item.has("updated")) "تازه شوی: " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date(item.optLong("updated"))) else "پخوانۍ پروژه"
+                textSize = 15f; setTextColor(Color.WHITE); setPadding(14, 16, 14, 16)
                 background = rounded(panel, 16f)
+                setOnClickListener { editProject(item) }
                 setOnLongClickListener {
-                    AlertDialog.Builder(this@MainActivity).setMessage("پروژه حذف شي؟")
-                        .setNegativeButton("نه", null).setPositiveButton("حذف") { _, _ ->
-                            all.remove(i); prefs.edit().putString("project_items", all.toString()).apply(); showProjects()
-                        }.show(); true
+                    AlertDialog.Builder(this@MainActivity).setTitle(item.optString("name"))
+                        .setItems(arrayOf("سمول", "شریکول", "حذفول")) { _, choice ->
+                            when (choice) {
+                                0 -> editProject(item)
+                                1 -> shareProject(item)
+                                2 -> AlertDialog.Builder(this@MainActivity).setMessage("پروژه حذف شي؟")
+                                    .setNegativeButton("نه", null).setPositiveButton("حذف") { _, _ ->
+                                        all.remove(i)
+                                        prefs.edit().putString("project_items", all.toString()).apply()
+                                        showProjects()
+                                    }.show()
+                            }
+                        }.show()
+                    true
                 }
             }
             val lp = LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, 6, 0, 6); root.addView(row, lp)
         }
         root.addView(bottomNav("projects"))
+    }
+
+    private fun editProject(item: JSONObject) {
+        val fields = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 4, 8, 0)
+        }
+        val nameField = EditText(this).apply {
+            hint = "د پروژې نوم"
+            setText(item.optString("name"))
+        }
+        val descriptionField = EditText(this).apply {
+            hint = "د پروژې تشریح"
+            minLines = 3
+            gravity = Gravity.TOP
+            setText(item.optString("description"))
+        }
+        fields.addView(nameField)
+        fields.addView(descriptionField)
+        AlertDialog.Builder(this).setTitle("پروژه سمول").setView(fields)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("ساتل") { _, _ ->
+                val name = nameField.text.toString().trim()
+                if (name.isBlank()) {
+                    Toast.makeText(this, "د پروژې نوم اړین دی.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val all = projectItems
+                for (i in 0 until all.length()) {
+                    val saved = all.optJSONObject(i) ?: continue
+                    if ((item.optString("id").isNotBlank() && saved.optString("id") == item.optString("id")) ||
+                        (item.optString("id").isBlank() && saved.optString("name") == item.optString("name") && saved.optLong("created") == item.optLong("created"))) {
+                        saved.put("name", name)
+                        saved.put("description", descriptionField.text.toString().trim())
+                        saved.put("updated", System.currentTimeMillis())
+                        item.put("name", name)
+                        item.put("description", descriptionField.text.toString().trim())
+                        item.put("updated", saved.optLong("updated"))
+                        break
+                    }
+                }
+                prefs.edit().putString("project_items", all.toString()).apply()
+                showProjects()
+                Toast.makeText(this, "پروژه تازه شوه.", Toast.LENGTH_SHORT).show()
+            }.show()
+    }
+
+    private fun shareProject(item: JSONObject) {
+        val content = buildString {
+            append(item.optString("name", "HAMA AI Project")).append("\\n\\n")
+            append(item.optString("description", "تشریح نشته")).append("\\n")
+            if (item.has("created")) append("جوړه شوې: ").append(item.optLong("created")).append("\\n")
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, item.optString("name", "HAMA AI Project"))
+            putExtra(Intent.EXTRA_TEXT, content)
+        }
+        startActivity(Intent.createChooser(intent, "پروژه شریکول"))
     }
 
     private fun showChat() {
