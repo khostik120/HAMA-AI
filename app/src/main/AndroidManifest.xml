@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application
+        android:icon="@drawable/ic_hama_ai"
+        android:roundIcon="@drawable/ic_hama_ai"
         android:label="HAMA AI"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
