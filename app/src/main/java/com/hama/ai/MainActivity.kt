@@ -994,6 +994,14 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setTextColor(Color.WHITE)
             setPadding(15, 25, 15, 25)
         })
+        root.addView(TextView(this).apply {
+            text = "د HAMA AI پېژندنه\n\nHAMA AI د افغانستان د خوست ولایت د سوکت الله له خوا رامنځته شوې یوه خپلواکه، څو ژبی مصنوعي ځیرکتیا پروژه ده. موخه یې دا ده چې د بېلابېلو ژبو خلکو ته هوښیار او ګټور مرستیال وړاندې کړي."
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setPadding(18, 22, 18, 22)
+            background = rounded(panel, 20f)
+        })
         root.addView(smallButton("د نوم بدلول") {
             val field = EditText(this); field.setText(name)
             AlertDialog.Builder(this).setTitle("ستاسو نوم").setView(field)
