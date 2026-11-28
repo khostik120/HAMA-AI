@@ -64,12 +64,24 @@ export default {
               ? []
               : [{ role: "user", content: message }]),
         ],
-        max_completion_tokens: 600
+        max_completion_tokens: 600,
+        stream: true
       });
 
-      const reply = result?.response ?? result?.choices?.[0]?.message?.content ?? result?.output_text ?? "";
-      if (!reply) return json({ error: "The AI returned an empty response. Please try again." }, 502);
-      return json({ reply: String(reply), model: "@cf/meta/llama-3.2-3b-instruct" });
+      // Pass the model's token stream straight to Android so the first words
+      // appear immediately instead of waiting for the complete answer.
+      if (result instanceof ReadableStream) {
+        return new Response(result, {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no"
+          }
+        });
+      }
+      return json({ error: "The AI streaming response was unavailable." }, 502);
     } catch (error) {
       return json({ error: error?.message || "The AI service could not complete the request." }, 500);
     }
