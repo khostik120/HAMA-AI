@@ -34,10 +34,10 @@ export default {
               typeof item.content === "string" &&
               item.content.trim()
             )
-            .slice(-12)
+            .slice(-6)
             .map((item) => ({
               role: item.role,
-              content: item.content.trim().slice(0, 4000),
+              content: item.content.trim().slice(0, 1600),
             }))
         : [];
 
@@ -54,7 +54,7 @@ export default {
         "Be clear and honest. If you do not know something, say so."
       ].join(" ");
 
-      const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+      const result = await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
@@ -64,12 +64,12 @@ export default {
               ? []
               : [{ role: "user", content: message }]),
         ],
-        max_completion_tokens: 1200
+        max_completion_tokens: 600
       });
 
       const reply = result?.response ?? result?.choices?.[0]?.message?.content ?? result?.output_text ?? "";
       if (!reply) return json({ error: "The AI returned an empty response. Please try again." }, 502);
-      return json({ reply: String(reply), model: "@cf/zai-org/glm-4.7-flash" });
+      return json({ reply: String(reply), model: "@cf/meta/llama-3.2-3b-instruct" });
     } catch (error) {
       return json({ error: error?.message || "The AI service could not complete the request." }, 500);
     }
