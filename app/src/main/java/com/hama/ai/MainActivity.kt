@@ -994,14 +994,41 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             setTextColor(Color.WHITE)
             setPadding(15, 25, 15, 25)
         })
-        root.addView(TextView(this).apply {
-            text = "د HAMA AI پېژندنه\n\nHAMA AI د افغانستان د خوست ولایت د سوکت الله له خوا رامنځته شوې یوه خپلواکه، څو ژبی مصنوعي ځیرکتیا پروژه ده. موخه یې دا ده چې د بېلابېلو ژبو خلکو ته هوښیار او ګټور مرستیال وړاندې کړي."
-            textSize = 16f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            setPadding(18, 22, 18, 22)
-            background = rounded(panel, 20f)
-        })
+        val aboutScroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(TextView(this@MainActivity).apply {
+                text = """زه HAMA AI یم
+
+زه HAMA AI یم، یو پرمختللی مصنوعي ځیرکتیا لرونکی مرستیال چې ستاسو پوښتنو ته د ځواب ویلو، معلوماتو شریکولو او په بېلابېلو برخو کې ستاسو د مرستې لپاره جوړ شوی یم.
+
+زه په پښتو او ګڼو نورو ژبو خبرې او مرسته کولی شم.
+
+زما خدمتونه
+• د بېلابېلو پوښتنو ځوابول.
+• د پروګرامینګ او ټکنالوژۍ په زده کړه کې مرسته.
+• د متنونو ژباړه، سمون او لنډیز.
+• د زده کړې او نویو معلوماتو ترلاسه کولو کې مرسته.
+• د لیکنو، نظریاتو او پروژو په جوړولو کې مرسته.
+
+زما موخه:
+د نړۍ خلکو ته په بېلابېلو ژبو کې هوښیار، چټک او ګټور خدمتونه وړاندې کول.
+
+زه څنګه درسره مرسته کولی شم؟
+
+ــــــــــــــــــــــــــــــــ
+
+جوړوونکی: سوکت الله
+ولایت: خوست، افغانستان
+پروژه: HAMA AI 🇦🇫""".trimIndent()
+                textSize = 16f
+                gravity = Gravity.START
+                setTextColor(Color.WHITE)
+                setLineSpacing(5f, 1.08f)
+                setPadding(20, 22, 20, 26)
+                background = rounded(panel, 20f)
+            })
+        }
+        root.addView(aboutScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(smallButton("د نوم بدلول") {
             val field = EditText(this); field.setText(name)
             AlertDialog.Builder(this).setTitle("ستاسو نوم").setView(field)
