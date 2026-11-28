@@ -747,13 +747,46 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     .put("messages", context)
                 connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
-                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-                val raw = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                if (code !in 200..299) {
+                    val errorBody = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                    val errorJson = try { JSONObject(errorBody) } catch (_: Exception) { JSONObject() }
+                    throw IllegalStateException(errorJson.optString("error", "د سرور تېروتنه"))
+                }
+
+                val answerBuilder = StringBuilder()
+                connection.inputStream.bufferedReader(Charsets.UTF_8).use { reader ->
+                    while (true) {
+                        if (requestCancelled) throw java.io.InterruptedIOException("غوښتنه بنده شوه")
+                        val line = reader.readLine() ?: break
+                        val data = line.trim()
+                        if (!data.startsWith("data:")) continue
+                        val payload = data.removePrefix("data:").trim()
+                        if (payload.isEmpty() || payload == "[DONE]") continue
+                        val chunk = try {
+                            val json = JSONObject(payload)
+                            json.optString("response",
+                                json.optString("text",
+                                    json.optJSONObject("choices")?.optJSONArray("delta")?.optJSONObject(0)?.optString("content").orEmpty()))
+                        } catch (_: Exception) {
+                            ""
+                        }
+                        if (chunk.isNotEmpty()) {
+                            answerBuilder.append(chunk)
+                            val partial = answerBuilder.toString()
+                            runOnUiThread {
+                                val row = waitingRow as? LinearLayout
+                                val bubble = row?.getChildAt(0) as? TextView
+                                bubble?.text = partial
+                                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                            }
+                        }
+                    }
+                }
                 connection.disconnect()
                 activeConnection = null
-                val json = JSONObject(raw)
-                if (code !in 200..299) throw IllegalStateException(json.optString("error", "د سرور تېروتنه"))
-                json.optString("reply", "ځواب ترلاسه نه شو.")
+                val streamedAnswer = answerBuilder.toString().trim()
+                if (streamedAnswer.isEmpty()) throw IllegalStateException("د AI ځواب تش و. بیا هڅه وکړئ.")
+                streamedAnswer
             } catch (e: Exception) {
                 if (requestCancelled) "" else (e.message ?: "انټرنېټ یا سرور کې ستونزه ده.")
             } finally {
