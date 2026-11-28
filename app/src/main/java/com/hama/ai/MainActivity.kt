@@ -736,10 +736,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 val context = JSONArray()
-                chatMessages.takeLast(12).forEach { item ->
+                chatMessages.takeLast(6).forEach { item ->
                     context.put(JSONObject()
                         .put("role", if (item.optBoolean("user")) "user" else "assistant")
-                        .put("content", item.optString("text").take(4000)))
+                        .put("content", item.optString("text").take(1600)))
                 }
                 val body = JSONObject()
                     .put("message", message)
