@@ -42,6 +42,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private lateinit var speech: TextToSpeech
     private var speechReady = false
     private var speakReplies = false
+    private var codeModeEnabled = false
     private var recognizer: SpeechRecognizer? = null
     private var selectedLanguage = "Auto-detect"
     private var currentChatId = System.currentTimeMillis().toString()
@@ -568,6 +569,18 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 setOnClickListener { action() }
             }
 
+        val codeModeButton = actionButton("</> 1M", "د یو میلیون کرښو کوډ حالت فعالول یا بندول") {
+            codeModeEnabled = !codeModeEnabled
+            val button = actions.getChildAt(0) as? TextView
+            button?.text = if (codeModeEnabled) "</> ON" else "</> 1M"
+            button?.background = if (codeModeEnabled)
+                glossy(intArrayOf(Color.rgb(0, 166, 130), Color.rgb(0, 90, 92)), 15f, Color.rgb(104, 255, 205))
+            else
+                glossy(intArrayOf(Color.rgb(38, 91, 158), Color.rgb(13, 34, 70)), 15f, Color.rgb(73, 169, 245))
+            Toast.makeText(this, if (codeModeEnabled) "1M Code فعال شو — کوډ به په پړاوونو کې جوړېږي." else "1M Code بند شو.", Toast.LENGTH_SHORT).show()
+        }
+        actions.addView(codeModeButton, LinearLayout.LayoutParams(76, 44).apply { marginEnd = 6 })
+
         val attach = actionButton("＋", tr("attach")) {
             val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
@@ -742,7 +755,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                         .put("content", item.optString("text").take(1600)))
                 }
                 val body = JSONObject()
-                    .put("message", message)
+                    .put("message", if (codeModeEnabled) {
+                        "You are HAMA AI Code Builder. Create correct, runnable, production-quality code for the user's project. For very large projects, split work into numbered stages and files, keep a clear file tree and continuity, and never claim to output one million lines unless actually delivered. User request: $message"
+                    } else message)
                     .put("language", selectedLanguage)
                     .put("messages", context)
                 connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
